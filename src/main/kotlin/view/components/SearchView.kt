@@ -1,16 +1,25 @@
 package view.components
 
-import javax.swing.JTextField
+import presenter.SearchPresenter
+import view.JSearchField
 import javax.swing.SwingUtilities
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
 interface SearchView {
+    fun setPresenter(presenter: SearchPresenter)
     fun setOnSearchAction(listener: (query: String) -> Unit)
-    fun clearSearch()
+    fun setProgress(percent: Int);
+    fun clearSearch();
 }
 
-class SearchViewImpl(private val searchField: JTextField) : SearchView {
+class SearchViewImpl(private val searchField: JSearchField) : SearchView {
+    private lateinit var presenter: SearchPresenter
+
+    override fun setPresenter(presenter: SearchPresenter) {
+        this.presenter = presenter
+    }
+
     override fun setOnSearchAction(listener: (query: String) -> Unit) {
         searchField.document.addDocumentListener(object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent) = onSearch()
@@ -23,10 +32,16 @@ class SearchViewImpl(private val searchField: JTextField) : SearchView {
         })
     }
 
+    override fun setProgress(percent: Int) {
+        SwingUtilities.invokeLater {
+            searchField.setProgress(percent)
+        }
+    }
 
     override fun clearSearch() {
         SwingUtilities.invokeLater {
             searchField.text = ""
+            searchField.setProgress(-1)
         }
     }
 }

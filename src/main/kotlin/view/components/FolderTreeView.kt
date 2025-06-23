@@ -59,7 +59,7 @@ class FolderTreeViewImpl(private val tree: JTree) : FolderTreeView {
 
     override fun refresh() {
         SwingUtilities.invokeLater {
-            (tree.model as? DefaultTreeModel)?.reload()
+            (tree.model as DefaultTreeModel).reload()
         }
     }
 }

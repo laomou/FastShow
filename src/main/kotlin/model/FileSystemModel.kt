@@ -7,8 +7,8 @@ import java.nio.file.StandardCopyOption
 interface FileSystemModel {
     fun getRoots(): List<FileModel>
     fun getChildren(parent: FileModel): List<FileModel>
+    fun getAllChildren(directory: FileModel): List<FileModel>
     fun getParent(child: FileModel): FileModel?
-    fun searchFiles(directory: FileModel, query: String): List<FileModel>
     fun copyFile(source: FileModel, destination: FileModel): Boolean
     fun deleteFile(file: FileModel): Boolean
     fun createNewFolder(parent: FileModel, name: String): FileModel?
@@ -24,12 +24,12 @@ class DefaultFileSystemModel : FileSystemModel {
         return parent.file.listVisibleChildren()
     }
 
-    override fun getParent(child: FileModel): FileModel? {
-        return child.file.parentFile?.let { FileModel(it) }
+    override fun getAllChildren(directory: FileModel): List<FileModel> {
+        return directory.file.searchRecursively()
     }
 
-    override fun searchFiles(directory: FileModel, query: String): List<FileModel> {
-        return directory.file.listVisibleChildren().filter { it.name.contains(query, ignoreCase = true) }
+    override fun getParent(child: FileModel): FileModel? {
+        return child.file.parentFile?.let { FileModel(it) }
     }
 
     override fun copyFile(source: FileModel, destination: FileModel): Boolean {
@@ -71,9 +71,9 @@ class DefaultFileSystemModel : FileSystemModel {
             ?: emptyList()
     }
 
-    private fun File.searchRecursively(query: String): List<FileModel> {
+    private fun File.searchRecursively(): List<FileModel> {
         return walkTopDown()
-            .filter { it.isFile && it.name.contains(query, ignoreCase = true) }
+            .filter { !it.isHidden }
             .map { FileModel(it) }
             .toList()
     }

@@ -2,6 +2,8 @@ package view.components.renderers
 
 import model.FolderTreeNode
 import java.awt.Component
+import java.io.File
+import javax.swing.Icon
 import javax.swing.JTree
 import javax.swing.UIManager
 import javax.swing.filechooser.FileSystemView
@@ -15,6 +17,10 @@ class FolderTreeCellRenderer : DefaultTreeCellRenderer() {
     private val fileSystemView = FileSystemView.getFileSystemView()
     private val desktop = FileSystemView.getFileSystemView().homeDirectory
     private val desktopIcon = fileSystemView.getSystemIcon(desktop)
+    private val iconCache = mutableMapOf<File, Icon>()
+    private val nameCache = mutableMapOf<File, String>()
+    fun getCachedIcon(file: File): Icon = iconCache.getOrPut(file) { fileSystemView.getSystemIcon(file) }
+    fun getCachedName(file: File): String = nameCache.getOrPut(file) { fileSystemView.getSystemDisplayName(file) }
 
     override fun getTreeCellRendererComponent(
         tree: JTree?,
@@ -39,8 +45,8 @@ class FolderTreeCellRenderer : DefaultTreeCellRenderer() {
                 text = "此电脑"
             }
             "Drive" -> {
-                icon = fileSystemView.getSystemIcon(file)
-                text = fileSystemView.getSystemDisplayName(file)
+                icon = getCachedIcon(file)
+                text = getCachedName(file)
             }
             else -> {
                 icon = when {

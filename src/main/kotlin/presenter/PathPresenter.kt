@@ -1,7 +1,6 @@
 package presenter
 
 import mediator.FastShowMediator
-import model.FileSystemModel
 import model.FileModel
 import view.components.PathView
 
@@ -13,12 +12,9 @@ class PathPresenter(
         view.setPresenter(this)
     }
 
-    fun onPathChanged() {
-        val path = view.getCurrentPath()
-        val fileMode = FileModel.from(path)
-
-        if (fileMode != null && fileMode.isDirectory) {
-            mediator.onDirectoryChanged(fileMode)
+    fun onPathChanged(directory: FileModel?) {
+        if (directory != null && directory.isDirectory) {
+            mediator.onDirectoryChanged(directory)
         } else {
             view.showError("路径不存在或不是目录")
         }

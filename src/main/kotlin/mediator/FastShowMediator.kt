@@ -1,14 +1,13 @@
 package mediator
 
-import model.FileSystemModel
 import model.FileModel
+import model.FileSystemModel
 import presenter.FileListPresenter
 import presenter.FolderTreePresenter
 import presenter.PathPresenter
+import presenter.SearchPresenter
 import view.MainView
-import javax.swing.SwingUtilities
 import javax.swing.filechooser.FileSystemView
-import kotlin.concurrent.thread
 
 class FastShowMediator(
     private val fileSystemModel: FileSystemModel,
@@ -17,6 +16,7 @@ class FastShowMediator(
     private lateinit var folderTreePresenter: FolderTreePresenter
     private lateinit var fileListPresenter: FileListPresenter
     private lateinit var pathPresenter: PathPresenter
+    private lateinit var searchPresenter: SearchPresenter
 
     private var currentDirectory: FileModel? = null
     private var lastSearchQuery: String = ""
@@ -39,7 +39,11 @@ class FastShowMediator(
             this
         )
 
-        setupSearch()
+        searchPresenter = SearchPresenter(
+            mainView.getSearchView(),
+            fileSystemModel,
+            this
+        )
 
         onTreeNodeSelected(FileModel(FileSystemView.getFileSystemView().homeDirectory))
     }
@@ -47,38 +51,28 @@ class FastShowMediator(
     fun onDirectoryChanged(directory: FileModel) {
         currentDirectory = directory
         pathPresenter.setCurrentPath(directory.path)
-        fileListPresenter.updateModel(fileSystemModel.getChildren(directory))
+        searchPresenter.setCurrentPath(directory)
+        fileListPresenter.setCurrentPath(directory)
         folderTreePresenter.expandToPath(directory)
     }
 
     fun onTreeNodeSelected(directory: FileModel) {
         currentDirectory = directory
         pathPresenter.setCurrentPath(directory.path)
-        fileListPresenter.updateModel(fileSystemModel.getChildren(directory))
+        searchPresenter.setCurrentPath(directory)
+        fileListPresenter.setCurrentPath(directory)
     }
 
-    fun getChildren(directory: FileModel): List<FileModel> {
-        return fileSystemModel.getChildren(directory)
+    fun onEnterSearch() {
+        fileListPresenter.enterSearch()
     }
 
-    private fun setupSearch() {
-        val searchView = mainView.getSearchView()
-
-        searchView.setOnSearchAction { query ->
-            lastSearchQuery = query
-            currentDirectory?.let { dir ->
-                thread {
-                    val result = if (query.isBlank()) {
-                        fileSystemModel.getChildren(dir)
-                    } else {
-                        fileSystemModel.searchFiles(dir, query)
-                    }
-
-                    SwingUtilities.invokeLater {
-                        fileListPresenter.updateModel(result)
-                    }
-                }
-            }
-        }
+    fun onExitSearch() {
+        fileListPresenter.exitSearch()
     }
+
+    fun onSearchOneResult(fileModel: FileModel) {
+        fileListPresenter.appendSearchResult(fileModel)
+    }
+
 }

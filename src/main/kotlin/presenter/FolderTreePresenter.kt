@@ -1,8 +1,8 @@
 package presenter
 
 import mediator.FastShowMediator
-import model.FileSystemModel
 import model.FileModel
+import model.FileSystemModel
 import model.FolderTreeNode
 import view.components.FolderTreeView
 import javax.swing.event.TreeExpansionEvent
@@ -49,12 +49,14 @@ class FolderTreePresenter(
     }
 
     override fun treeWillExpand(event: TreeExpansionEvent) {
-        val node = event.path.lastPathComponent as FolderTreeNode
-        if (!node.isLoaded) {
-            loadChildren(node)
-            view.setLoadingState(event.path, false)
-            treeModel.nodeStructureChanged(node)
-        }
+        val path = event.path
+        val node = path.lastPathComponent as FolderTreeNode
+        if (node.isLoaded) return
+
+        view.setLoadingState(event.path, false)
+        loadChildren(node)
+        view.setLoadingState(event.path, true)
+        treeModel.nodeStructureChanged(node)
     }
 
     override fun treeWillCollapse(event: TreeExpansionEvent) {}
@@ -67,7 +69,7 @@ class FolderTreePresenter(
     }
 
     fun expandToPath(directory: FileModel) {
-        findPathTo(directory)?.let(view::expandPath)
+//        findPathTo(directory)?.let(view::expandPath)
     }
 
     private fun findPathTo(directory: FileModel): TreePath? {
@@ -97,9 +99,9 @@ class FolderTreePresenter(
     private fun loadChildren(node: FolderTreeNode) {
         if (node.isLoaded || !node.isDirectory) return
 
-        val children = mediator.getChildren(node.fileModel)
         node.removeAllChildren()
 
+        val children = fileSystemMode.getChildren(node.fileModel)
         children.filter { it.isDirectory }.forEach { child ->
             val childNode = FolderTreeNode(child)
             node.add(childNode)

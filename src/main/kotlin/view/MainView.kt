@@ -5,8 +5,10 @@ import view.components.*
 import view.components.renderers.FileListRenderer
 import view.components.renderers.FolderTreeCellRenderer
 import java.awt.BorderLayout
+import java.awt.Color
 import javax.swing.*
 import javax.swing.tree.DefaultTreeModel
+
 
 interface MainView {
     fun initializeUI()
@@ -29,6 +31,7 @@ class MainViewImpl : MainView {
 
     override fun initializeUI() {
         frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
+        frame.extendedState = JFrame.MAXIMIZED_BOTH
         frame.setSize(1200, 800)
 
         val toolBar = JToolBar().apply {
@@ -50,9 +53,11 @@ class MainViewImpl : MainView {
         }
         pathView = PathViewImpl(pathField)
 
-        val searchField = JTextField().apply {
+        val searchField = JSearchField().apply {
             toolTipText = "搜索"
-            columns = 20
+            columns = 30
+            isOpaque = false
+            background = Color.WHITE
         }
         searchView = SearchViewImpl(searchField)
 
