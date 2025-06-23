@@ -19,12 +19,11 @@ class SearchPresenter (
             lastSearchQuery = query
 
             if (query.isBlank()) {
-                view.clearSearch()
                 mediator.onExitSearch()
                 return@setOnSearchAction
-            } else {
-                mediator.onEnterSearch()
             }
+
+            mediator.onEnterSearch()
 
             currentDirectory?.let { dir ->
                 thread {
@@ -43,6 +42,10 @@ class SearchPresenter (
                 }
             }
         }
+    }
+
+    fun exitSearch() {
+        view.clearSearch()
     }
 
     fun setCurrentPath(path: FileModel?) {

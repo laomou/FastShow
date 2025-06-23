@@ -54,9 +54,7 @@ class FolderTreePresenter(
         val node = path.lastPathComponent as FolderTreeNode
         if (node.isLoaded) return
 
-        view.setLoadingState(event.path, false)
         loadChildren(node)
-        view.setLoadingState(event.path, true)
         treeModel.nodeStructureChanged(node)
     }
 
@@ -83,6 +81,9 @@ class FolderTreePresenter(
             val childNode = FolderTreeNode(child, node)
             treePathCache[childNode.fileModel] = childNode.treePath
             node.add(childNode)
+
+            val grandChildren = fileSystemMode.getChildren(childNode.fileModel)
+            childNode.hasSubFolders = grandChildren.any { it.isDirectory }
         }
 
         node.isLoaded = true

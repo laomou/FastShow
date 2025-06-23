@@ -68,6 +68,7 @@ class FastShowMediator(
     }
 
     fun onExitSearch() {
+        searchPresenter.exitSearch()
         fileListPresenter.exitSearch()
     }
 
