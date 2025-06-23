@@ -12,7 +12,7 @@ import javax.swing.tree.TreePath
 interface FolderTreeView {
     fun setPresenter(presenter: FolderTreePresenter)
     fun updateModel(model: DefaultTreeModel)
-    fun expandPath(path: TreePath)
+    fun expandToPath(path: TreePath)
     fun getSelectedNode(): FolderTreeNode?
     fun setLoadingState(path: TreePath, loading: Boolean)
     fun refresh()
@@ -37,9 +37,10 @@ class FolderTreeViewImpl(private val tree: JTree) : FolderTreeView {
         SwingUtilities.invokeLater { tree.model = model }
     }
 
-    override fun expandPath(path: TreePath) {
+    override fun expandToPath(path: TreePath) {
         SwingUtilities.invokeLater {
             tree.expandPath(path)
+            tree.selectionPath = path
             tree.scrollPathToVisible(path)
         }
     }

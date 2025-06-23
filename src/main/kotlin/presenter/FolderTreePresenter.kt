@@ -16,6 +16,7 @@ class FolderTreePresenter(
     private val fileSystemMode: FileSystemModel,
     private val mediator: FastShowMediator
 ) : TreeWillExpandListener {
+    private val treePathCache = mutableMapOf<FileModel, TreePath>()
     private val homeDirectory = FileSystemView.getFileSystemView().homeDirectory
     private lateinit var treeModel: DefaultTreeModel
 
@@ -25,15 +26,15 @@ class FolderTreePresenter(
     }
 
     private fun initializeTree() {
-        val rootNode = FolderTreeNode(FileModel(homeDirectory)).apply {
+        val rootNode = FolderTreeNode(FileModel(homeDirectory), null).apply {
             userObject = "Desktop"
 
-            val myPCNode = FolderTreeNode(FileModel(homeDirectory)).apply {
+            val myPCNode = FolderTreeNode(FileModel(homeDirectory), this).apply {
                 userObject = "MyPC"
                 isLoaded = true
 
                 fileSystemMode.getRoots().forEach { drive ->
-                    val driveNode = FolderTreeNode(drive).apply {
+                    val driveNode = FolderTreeNode(drive, this).apply {
                         userObject = "Drive"
                     }
                     loadChildren(driveNode)
@@ -69,31 +70,7 @@ class FolderTreePresenter(
     }
 
     fun expandToPath(directory: FileModel) {
-//        findPathTo(directory)?.let(view::expandPath)
-    }
-
-    private fun findPathTo(directory: FileModel): TreePath? {
-        val pathNodes = generateSequence(directory) { fileSystemMode.getParent(it) }
-            .mapNotNull { findNode(it) }
-            .toList()
-            .asReversed()
-
-        return if (pathNodes.isNotEmpty()) TreePath(pathNodes.toTypedArray()) else null
-    }
-
-    private fun findNode(fileModel: FileModel): FolderTreeNode? {
-        fun recurse(node: FolderTreeNode): FolderTreeNode? {
-            if (node.fileModel.path == fileModel.path) return node
-            if (!node.isLoaded && node.isDirectory) loadChildren(node)
-
-            return (0 until node.childCount)
-                .asSequence()
-                .map { node.getChildAt(it) as FolderTreeNode }
-                .mapNotNull(::recurse)
-                .firstOrNull()
-        }
-
-        return recurse(treeModel.root as FolderTreeNode)
+        treePathCache[directory]?.let { view.expandToPath(it) }
     }
 
     private fun loadChildren(node: FolderTreeNode) {
@@ -103,7 +80,8 @@ class FolderTreePresenter(
 
         val children = fileSystemMode.getChildren(node.fileModel)
         children.filter { it.isDirectory }.forEach { child ->
-            val childNode = FolderTreeNode(child)
+            val childNode = FolderTreeNode(child, node)
+            treePathCache[childNode.fileModel] = childNode.treePath
             node.add(childNode)
         }
 
