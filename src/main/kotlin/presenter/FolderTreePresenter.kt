@@ -31,6 +31,7 @@ class FolderTreePresenter(
     private fun initializeTree() {
         rootTreeNode = FolderTreeNode(FileEntry(homeDirectory), null).apply {
             userObject = "Desktop"
+            isLoaded = true
 
             val myPCNode = FolderTreeNode(FileEntry(homeDirectory), this).apply {
                 userObject = "MyPC"
