@@ -48,7 +48,7 @@ class FileListPresenter(
     fun loadDirectoryContents(directory: FileEntry) {
         currentDirectory = directory
         thread {
-            val files = fileSystemMode.getChildren(directory)
+            val files = fileSystemMode.getChildren(directory).filter { it.isImage || it.isDirectory }
             SwingUtilities.invokeLater {
                 listModel.clear()
                 files.forEach { listModel.addElement(it) }
