@@ -1,15 +1,13 @@
 package view.components
 
-import model.FileModel
+import model.FileEntry
 import presenter.PathPresenter
-import javax.swing.JOptionPane
 import javax.swing.JTextField
 import javax.swing.SwingUtilities
 
 interface PathView {
     fun setPresenter(presenter: PathPresenter)
     fun setCurrentPath(path: String)
-    fun showError(message: String)
 }
 
 class PathViewImpl(private val textField: JTextField) : PathView {
@@ -18,19 +16,18 @@ class PathViewImpl(private val textField: JTextField) : PathView {
     override fun setPresenter(presenter: PathPresenter) {
         this.presenter = presenter
         textField.addActionListener {
-            presenter.onPathChanged(FileModel.from(textField.text))
+            val directory = FileEntry.from(textField.text)
+            if (directory != null && directory.isDirectory) {
+                presenter.changeDirectory(directory)
+            } else {
+                presenter.showErrorMessage("路径不存在或不是目录")
+            }
         }
     }
 
     override fun setCurrentPath(path: String) {
         SwingUtilities.invokeLater {
             textField.text = path
-        }
-    }
-
-    override fun showError(message: String) {
-        SwingUtilities.invokeLater {
-            JOptionPane.showMessageDialog(textField, message, "错误", JOptionPane.ERROR_MESSAGE)
         }
     }
 }

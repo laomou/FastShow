@@ -1,7 +1,7 @@
 package presenter
 
 import mediator.FastShowMediator
-import model.FileModel
+import model.FileEntry
 import model.FileSystemModel
 import view.components.SearchView
 import kotlin.concurrent.thread
@@ -12,7 +12,7 @@ class SearchPresenter (
     private val mediator: FastShowMediator
 ) {
     private var lastSearchQuery: String = ""
-    private var currentDirectory: FileModel? = null
+    private var currentDirectory: FileEntry? = null
     init {
         view.setPresenter(this)
         view.setOnSearchAction { query ->
@@ -48,7 +48,7 @@ class SearchPresenter (
         view.clearSearch()
     }
 
-    fun setCurrentPath(path: FileModel?) {
+    fun setCurrentPath(path: FileEntry) {
         view.clearSearch()
         currentDirectory = path
     }

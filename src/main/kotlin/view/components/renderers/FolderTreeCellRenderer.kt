@@ -19,8 +19,8 @@ class FolderTreeCellRenderer : DefaultTreeCellRenderer() {
     private val desktopIcon = fileSystemView.getSystemIcon(desktop)
     private val iconCache = mutableMapOf<File, Icon>()
     private val nameCache = mutableMapOf<File, String>()
-    fun getCachedIcon(file: File): Icon = iconCache.getOrPut(file) { fileSystemView.getSystemIcon(file) }
-    fun getCachedName(file: File): String = nameCache.getOrPut(file) { fileSystemView.getSystemDisplayName(file) }
+    private fun getCachedIcon(file: File): Icon = iconCache.getOrPut(file) { fileSystemView.getSystemIcon(file) }
+    private fun getCachedName(file: File): String = nameCache.getOrPut(file) { fileSystemView.getSystemDisplayName(file) }
 
     override fun getTreeCellRendererComponent(
         tree: JTree?,
@@ -34,8 +34,8 @@ class FolderTreeCellRenderer : DefaultTreeCellRenderer() {
         super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus)
 
         val node = value as FolderTreeNode
-        val file = node.fileModel.file
-        when (val userObj = node.userObject) {
+        val file = node.fileEntry.file
+        when (val userObj = node.userObject.toString()) {
             "Desktop" -> {
                 icon = desktopIcon
                 text = "桌面"
@@ -44,17 +44,18 @@ class FolderTreeCellRenderer : DefaultTreeCellRenderer() {
                 icon = computerIcon
                 text = "此电脑"
             }
-            "Drive" -> {
-                icon = getCachedIcon(file)
-                text = getCachedName(file)
-            }
             else -> {
-                icon = when {
-                    file.isDirectory && expanded -> folderOpenIcon
-                    file.isDirectory -> folderIcon
-                    else -> fileIcon
+                if (userObj.startsWith("Drive")) {
+                    icon = getCachedIcon(file)
+                    text = getCachedName(file)
+                } else {
+                    icon = when {
+                        file.isDirectory && expanded -> folderOpenIcon
+                        file.isDirectory -> folderIcon
+                        else -> fileIcon
+                    }
+                    text = file.name.toString()
                 }
-                text = file.name.toString()
             }
         }
 

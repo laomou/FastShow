@@ -1,6 +1,6 @@
 package view
 
-import model.FileModel
+import model.FileEntry
 import view.components.*
 import view.components.renderers.FileListRenderer
 import view.components.renderers.FolderTreeCellRenderer
@@ -12,6 +12,8 @@ import javax.swing.tree.DefaultTreeModel
 
 interface MainView {
     fun initializeUI()
+    fun getMenuBar(): MenuBar
+    fun getToolBar(): ToolBar
     fun getFolderTreeView(): FolderTreeView
     fun getFileListView(): FileListView
     fun getPathView(): PathView
@@ -24,6 +26,8 @@ interface MainView {
 class MainViewImpl : MainView {
     private val frame = JFrame("FastShow Image Viewer")
     private val splitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT)
+    private lateinit var menuBar: MenuBar
+    private lateinit var toolBar: ToolBar
     private lateinit var fileTreeView: FolderTreeView
     private lateinit var fileListView: FileListView
     private lateinit var pathView: PathView
@@ -34,9 +38,14 @@ class MainViewImpl : MainView {
         frame.extendedState = JFrame.MAXIMIZED_BOTH
         frame.setSize(1200, 800)
 
-        val toolBar = JToolBar().apply {
+        val jMenuBar = JMenuBar()
+        frame.jMenuBar = jMenuBar
+        menuBar = MenuBarImpl(jMenuBar)
+
+        val jToolBar = JToolBar().apply {
             isFloatable = false
         }
+        toolBar = ToolBarImpl(jToolBar)
 
         val model = DefaultTreeModel(null)
         val tree = JTree(model).apply {
@@ -53,7 +62,7 @@ class MainViewImpl : MainView {
         }
         pathView = PathViewImpl(pathField)
 
-        val searchField = JSearchField().apply {
+        val searchField = SearchField().apply {
             toolTipText = "搜索"
             columns = 30
             isOpaque = false
@@ -61,7 +70,7 @@ class MainViewImpl : MainView {
         }
         searchView = SearchViewImpl(searchField)
 
-        val fileList = JList<FileModel>().apply {
+        val fileList = JList<FileEntry>().apply {
             selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
             layoutOrientation = JList.HORIZONTAL_WRAP
             fixedCellWidth = 120
@@ -102,13 +111,15 @@ class MainViewImpl : MainView {
 
         frame.contentPane.apply {
             layout = BorderLayout()
-            add(toolBar, BorderLayout.NORTH)
+            add(jToolBar, BorderLayout.NORTH)
             add(splitPane, BorderLayout.CENTER)
         }
 
         frame.isVisible = true
     }
 
+    override fun getMenuBar(): MenuBar = menuBar
+    override fun getToolBar(): ToolBar = toolBar
     override fun getFolderTreeView(): FolderTreeView = fileTreeView
     override fun getFileListView(): FileListView = fileListView
     override fun getPathView(): PathView = pathView

@@ -2,7 +2,7 @@ package model
 
 import java.io.File
 
-data class FileModel(
+data class FileEntry(
     val file: File,
     val isDirectory: Boolean = file.isDirectory,
     val isHidden: Boolean = file.isHidden,
@@ -10,9 +10,9 @@ data class FileModel(
     val path: String = file.absolutePath
 ) {
     companion object {
-        fun from(file: String): FileModel? {
+        fun from(file: String): FileEntry? {
             val f = File(file)
-            return if (f.exists()) FileModel(f) else null
+            return if (f.exists()) FileEntry(f) else null
         }
     }
 }

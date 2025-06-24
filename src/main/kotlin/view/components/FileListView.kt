@@ -1,52 +1,62 @@
 package view.components
 
-import model.FileModel
+import model.FileEntry
 import presenter.FileListPresenter
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.awt.event.MouseListener
-import javax.swing.DefaultListModel
-import javax.swing.JList
-import javax.swing.SwingUtilities
+import javax.swing.*
 
 interface FileListView {
     fun setPresenter(presenter: FileListPresenter)
-    fun updateModel(model: DefaultListModel<FileModel>)
-    fun getSelectedFiles(): List<FileModel>
-    fun addMouseListener(l: MouseListener)
+    fun updateModel(model: DefaultListModel<FileEntry>)
 }
 
-class FileListViewImpl(private val list: JList<FileModel>) : FileListView {
+class FileListViewImpl(private val list: JList<FileEntry>) : FileListView {
     private lateinit var presenter: FileListPresenter
 
     override fun setPresenter(presenter: FileListPresenter) {
         this.presenter = presenter
+        list.addListSelectionListener {
+            presenter.onListSelected(list.selectedValuesList)
+        }
         list.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
-                if (e.clickCount == 2 && e.button == MouseEvent.BUTTON1) {
-                    val index = list.locationToIndex(e.getPoint())
-                    if (index >= 0) {
-                        val element = list.model.getElementAt(index)
-                        if (element.isDirectory) {
-                            presenter.navigateToDirectory(list.model.getElementAt(index))
+                if (SwingUtilities.isLeftMouseButton(e) ) {
+                    if (e.clickCount == 2) {
+                        val index = list.locationToIndex(e.getPoint())
+                        if (index >= 0) {
+                            val element = list.model.getElementAt(index)
+                            if (element.isDirectory) {
+                                presenter.changeDirectory(element)
+                            }
                         }
                     }
+                } else if (SwingUtilities.isRightMouseButton(e)) {
+                    showContextMenu(e.x, e.y)
                 }
             }
         })
     }
 
-    override fun updateModel(model: DefaultListModel<FileModel>) {
+    override fun updateModel(model: DefaultListModel<FileEntry>) {
         SwingUtilities.invokeLater {
             list.model = model
         }
     }
 
-    override fun getSelectedFiles(): List<FileModel> {
-        return list.selectedValuesList
+    private fun showContextMenu(x: Int, y: Int) {
+        val popupMenu = JPopupMenu()
+        presenter.getContextMenuItems().forEach { item ->
+            val menuItem = when {
+                item.label.isEmpty() -> JSeparator()
+                else -> JMenuItem(item.label).apply {
+                    isEnabled = item.enabled
+                    addActionListener { item.action() }
+                }
+            }
+            popupMenu.add(menuItem)
+        }
+        popupMenu.show(list, x, y)
     }
 
-    override fun addMouseListener(l: MouseListener) {
-        list.addMouseListener(l)
-    }
 }

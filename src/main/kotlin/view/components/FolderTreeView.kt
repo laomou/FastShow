@@ -4,8 +4,7 @@ import model.FolderTreeNode
 import presenter.FolderTreePresenter
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import javax.swing.JTree
-import javax.swing.SwingUtilities
+import javax.swing.*
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 
@@ -13,9 +12,6 @@ interface FolderTreeView {
     fun setPresenter(presenter: FolderTreePresenter)
     fun updateModel(model: DefaultTreeModel)
     fun expandToPath(path: TreePath)
-    fun getSelectedNode(): FolderTreeNode?
-    fun setLoadingState(path: TreePath, loading: Boolean)
-    fun refresh()
 }
 
 class FolderTreeViewImpl(private val tree: JTree) : FolderTreeView {
@@ -24,10 +20,20 @@ class FolderTreeViewImpl(private val tree: JTree) : FolderTreeView {
     override fun setPresenter(presenter: FolderTreePresenter) {
         this.presenter = presenter
         tree.addTreeWillExpandListener(this.presenter)
-        tree.addTreeSelectionListener { presenter.onTreeNodeSelected() }
+        tree.addTreeSelectionListener {
+            val selectedNode = tree.lastSelectedPathComponent
+            if (selectedNode is FolderTreeNode) {
+                presenter.onTreeNodeSelected(selectedNode)
+            }
+        }
         tree.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
                 if (SwingUtilities.isRightMouseButton(e)) {
+                    val path = tree.getPathForLocation(e.x, e.y)
+                    path?.let {
+                        tree.selectionPath = path
+                        showContextMenu(e.x, e.y)
+                    }
                 }
             }
         })
@@ -45,22 +51,18 @@ class FolderTreeViewImpl(private val tree: JTree) : FolderTreeView {
         }
     }
 
-    override fun getSelectedNode(): FolderTreeNode? {
-        return tree.lastSelectedPathComponent as FolderTreeNode?
-    }
-
-    override fun setLoadingState(path: TreePath, loading: Boolean) {
-        SwingUtilities.invokeLater {
-            val node = path.lastPathComponent as? FolderTreeNode
-            node?.let {
-                tree.treeDidChange()
+    private fun showContextMenu(x: Int, y: Int) {
+        val popupMenu = JPopupMenu()
+        presenter.getContextMenuItems().forEach { item ->
+            val menuItem = when {
+                item.label.isEmpty() -> JSeparator()
+                else -> JMenuItem(item.label).apply {
+                    isEnabled = item.enabled
+                    addActionListener { item.action() }
+                }
             }
+            popupMenu.add(menuItem)
         }
-    }
-
-    override fun refresh() {
-        SwingUtilities.invokeLater {
-            (tree.model as DefaultTreeModel).reload()
-        }
+        popupMenu.show(tree, x, y)
     }
 }

@@ -1,24 +1,27 @@
 package presenter
 
 import mediator.FastShowMediator
-import model.FileModel
+import model.FileEntry
 import model.FileSystemModel
 import model.FolderTreeNode
+import model.MenuItem
 import view.components.FolderTreeView
 import javax.swing.event.TreeExpansionEvent
 import javax.swing.event.TreeWillExpandListener
 import javax.swing.filechooser.FileSystemView
 import javax.swing.tree.DefaultTreeModel
-import javax.swing.tree.TreePath
 
 class FolderTreePresenter(
     private val view: FolderTreeView,
     private val fileSystemMode: FileSystemModel,
     private val mediator: FastShowMediator
 ) : TreeWillExpandListener {
-    private val treePathCache = mutableMapOf<FileModel, TreePath>()
+    private val treePathCache = mutableMapOf<FileEntry, FolderTreeNode>()
     private val homeDirectory = FileSystemView.getFileSystemView().homeDirectory
     private lateinit var treeModel: DefaultTreeModel
+    private lateinit var rootTreeNode: FolderTreeNode
+    private lateinit var selectedTreeNode: FolderTreeNode
+    private val clipboard: ClipboardManager = ClipboardManager()
 
     init {
         view.setPresenter(this)
@@ -26,26 +29,29 @@ class FolderTreePresenter(
     }
 
     private fun initializeTree() {
-        val rootNode = FolderTreeNode(FileModel(homeDirectory), null).apply {
+        rootTreeNode = FolderTreeNode(FileEntry(homeDirectory), null).apply {
             userObject = "Desktop"
 
-            val myPCNode = FolderTreeNode(FileModel(homeDirectory), this).apply {
+            val myPCNode = FolderTreeNode(FileEntry(homeDirectory), this).apply {
                 userObject = "MyPC"
                 isLoaded = true
 
-                fileSystemMode.getRoots().forEach { drive ->
+                fileSystemMode.getRoots().forEachIndexed  { idx, drive ->
                     val driveNode = FolderTreeNode(drive, this).apply {
-                        userObject = "Drive"
+                        userObject = "Drive_${idx}"
                     }
                     loadChildren(driveNode)
                     add(driveNode)
+
+                    treePathCache[drive] = driveNode
                 }
             }
 
             add(myPCNode)
         }
 
-        treeModel = DefaultTreeModel(rootNode)
+        selectedTreeNode = rootTreeNode
+        treeModel = DefaultTreeModel(rootTreeNode)
         view.updateModel(treeModel)
     }
 
@@ -60,15 +66,60 @@ class FolderTreePresenter(
 
     override fun treeWillCollapse(event: TreeExpansionEvent) {}
 
-    fun onTreeNodeSelected() {
-        val selectedNode = view.getSelectedNode()
-        selectedNode?.let {
-            mediator.onTreeNodeSelected(it.fileModel)
-        }
+    fun getContextMenuItems(): List<MenuItem> {
+        return listOf(
+            MenuItem("刷新", { refreshChildren(selectedTreeNode) }),
+            MenuItem("", { }),
+            MenuItem("剪切", { clipboard.cut(selectedTreeNode.fileEntry) }),
+            MenuItem("拷贝", { clipboard.copy(selectedTreeNode.fileEntry) }),
+            MenuItem(
+                "粘贴",
+                { clipboard.paste(selectedTreeNode.fileEntry, fileSystemMode); refreshChildren(selectedTreeNode) },
+                enabled = clipboard.canPaste()
+            ),
+            MenuItem("", { }),
+            MenuItem("新建文件夹", {
+                selectedTreeNode.let {
+                    val folderName = mediator.showInputDialog("新建文件夹", "新建文件夹名称")
+                    if (!folderName.isNullOrBlank()) {
+                        fileSystemMode.createNewFolder(it.fileEntry, folderName)
+                    }
+                }
+                refreshChildren(selectedTreeNode)
+            }),
+            MenuItem("删除", {
+                fileSystemMode.deleteFiles(arrayListOf(selectedTreeNode.fileEntry))
+                selectedTreeNode.parentNode?.let {
+                    refreshChildren(it)
+                }
+            }),
+            MenuItem("重命名", {
+                selectedTreeNode.let {
+                    val newName = mediator.showInputDialog("重命名", "文件名： ${it.fileEntry.name}\n重命名为：")
+                    if (!newName.isNullOrBlank()) {
+                        fileSystemMode.renameFile(it.fileEntry, newName)
+                    }
+                }
+                refreshChildren(selectedTreeNode)
+            }),
+        )
     }
 
-    fun expandToPath(directory: FileModel) {
-        treePathCache[directory]?.let { view.expandToPath(it) }
+    fun onTreeNodeSelected(treeNode: FolderTreeNode) {
+        selectedTreeNode = treeNode
+        mediator.onTreeNodeSelected(treeNode.fileEntry)
+    }
+
+    fun expandToPath(directory: FileEntry) {
+        treePathCache[directory]?.let { view.expandToPath(it.treePath) }
+    }
+
+    fun refreshChildren(node: FolderTreeNode) {
+        treePathCache[node.fileEntry]?.let {
+            node.isLoaded = false
+            loadChildren(it)
+            treeModel.nodeStructureChanged(node)
+        }
     }
 
     private fun loadChildren(node: FolderTreeNode) {
@@ -76,13 +127,14 @@ class FolderTreePresenter(
 
         node.removeAllChildren()
 
-        val children = fileSystemMode.getChildren(node.fileModel)
+        val children = fileSystemMode.getChildren(node.fileEntry)
         children.filter { it.isDirectory }.forEach { child ->
             val childNode = FolderTreeNode(child, node)
-            treePathCache[childNode.fileModel] = childNode.treePath
             node.add(childNode)
 
-            val grandChildren = fileSystemMode.getChildren(childNode.fileModel)
+            treePathCache[childNode.fileEntry] = childNode
+
+            val grandChildren = fileSystemMode.getChildren(childNode.fileEntry)
             childNode.hasSubFolders = grandChildren.any { it.isDirectory }
         }
 

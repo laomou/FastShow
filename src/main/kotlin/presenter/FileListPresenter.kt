@@ -1,8 +1,9 @@
 package presenter
 
 import mediator.FastShowMediator
-import model.FileModel
+import model.FileEntry
 import model.FileSystemModel
+import model.MenuItem
 import view.components.FileListView
 import javax.swing.DefaultListModel
 import javax.swing.SwingUtilities
@@ -13,12 +14,20 @@ class FileListPresenter(
     private val fileSystemMode: FileSystemModel,
     private val mediator: FastShowMediator
 ) {
-    private val listModel = DefaultListModel<FileModel>()
-    private val searchModel = DefaultListModel<FileModel>()
+    private var currentDirectory: FileEntry? = null
+    private var selectedNodeList: List<FileEntry> = arrayListOf()
+    private val listModel = DefaultListModel<FileEntry>()
+    private val searchModel = DefaultListModel<FileEntry>()
+    private val clipboard: ClipboardManager = ClipboardManager()
+
 
     init {
         view.setPresenter(this)
         view.updateModel(listModel)
+    }
+
+    fun onListSelected(list: List<FileEntry>) {
+        selectedNodeList = list
     }
 
     fun enterSearch() {
@@ -26,17 +35,18 @@ class FileListPresenter(
         view.updateModel(searchModel)
     }
 
-    fun exitSearch() {
-        view.updateModel(listModel)
-    }
-
-    fun appendSearchResult(file: FileModel) {
+    fun appendSearchResult(file: FileEntry) {
         SwingUtilities.invokeLater {
             searchModel.addElement(file)
         }
     }
 
-    fun setCurrentPath(directory: FileModel) {
+    fun exitSearch() {
+        view.updateModel(listModel)
+    }
+
+    fun loadDirectoryContents(directory: FileEntry) {
+        currentDirectory = directory
         thread {
             val files = fileSystemMode.getChildren(directory)
             SwingUtilities.invokeLater {
@@ -46,8 +56,53 @@ class FileListPresenter(
         }
     }
 
-    fun navigateToDirectory(fileModel: FileModel) {
+    fun changeDirectory(directory: FileEntry) {
         exitSearch()
-        mediator.onDirectoryChanged(fileModel)
+        currentDirectory = directory
+        mediator.onDirectoryChanged(directory)
+    }
+
+    fun getContextMenuItems(): List<MenuItem> {
+        return listOf(
+            MenuItem("刷新", { refreshCurrentDirectory() }),
+            MenuItem("", { }),
+            MenuItem("剪切", { clipboard.cut(selectedNodeList) }),
+            MenuItem("拷贝", { clipboard.copy(selectedNodeList) }),
+            MenuItem(
+                "粘贴",
+                { currentDirectory?.let { clipboard.paste(it, fileSystemMode); refreshCurrentDirectory() } },
+                enabled = clipboard.canPaste()
+            ),
+            MenuItem("", { }),
+            MenuItem("新建文件夹", {
+                currentDirectory?.let {
+                    val folderName = mediator.showInputDialog("新建文件夹", "新建文件夹名称")
+                    if (!folderName.isNullOrBlank()) {
+                        fileSystemMode.createNewFolder(it, folderName)
+                    }
+                }
+                refreshCurrentDirectory()
+            }),
+            MenuItem(
+                "删除",
+                { fileSystemMode.deleteFiles(selectedNodeList); refreshCurrentDirectory() },
+                selectedNodeList.isNotEmpty()
+            ),
+            MenuItem("重命名", {
+                selectedNodeList.forEach { it ->
+                    val newName = mediator.showInputDialog("重命名", "文件名： ${it.name}\n重命名为：")
+                    if (!newName.isNullOrBlank()) {
+                        fileSystemMode.renameFile(it, newName)
+                    }
+                }
+                refreshCurrentDirectory()
+            }),
+        )
+    }
+
+    private fun refreshCurrentDirectory() {
+        currentDirectory?.let {
+            loadDirectoryContents(it)
+        }
     }
 }

@@ -4,15 +4,15 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreePath
 
 class FolderTreeNode(
-    val fileModel: FileModel,
+    val fileEntry: FileEntry,
     val parentNode: FolderTreeNode?,
-) : DefaultMutableTreeNode(fileModel.name) {
+) : DefaultMutableTreeNode(fileEntry.name) {
 
     var isLoaded: Boolean = false
 
     var hasSubFolders: Boolean? = null
 
-    val isDirectory: Boolean get() = fileModel.isDirectory
+    val isDirectory: Boolean get() = fileEntry.isDirectory
 
     val treePath : TreePath by lazy {
         if (parentNode == null) {

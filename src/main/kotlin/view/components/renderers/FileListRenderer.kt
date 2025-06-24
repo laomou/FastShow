@@ -1,13 +1,13 @@
 package view.components.renderers
 
-import model.FileModel
+import model.FileEntry
 import java.awt.*
 import javax.swing.*
 import javax.swing.border.Border
 import javax.swing.border.CompoundBorder
 import javax.swing.border.EmptyBorder
 
-class FileListRenderer : JPanel(), ListCellRenderer<FileModel> {
+class FileListRenderer : JPanel(), ListCellRenderer<FileEntry> {
     private val iconLabel = JLabel()
     private val nameLabel = JLabel()
     private val folderIcon = UIManager.getIcon("FileView.directoryIcon")
@@ -30,8 +30,8 @@ class FileListRenderer : JPanel(), ListCellRenderer<FileModel> {
     }
 
     override fun getListCellRendererComponent(
-        list: JList<out FileModel>,
-        value: FileModel,
+        list: JList<out FileEntry>,
+        value: FileEntry,
         index: Int,
         isSelected: Boolean,
         cellHasFocus: Boolean

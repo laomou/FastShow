@@ -1,7 +1,7 @@
 package view.components
 
 import presenter.SearchPresenter
-import view.JSearchField
+import view.SearchField
 import javax.swing.SwingUtilities
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
@@ -13,7 +13,7 @@ interface SearchView {
     fun clearSearch();
 }
 
-class SearchViewImpl(private val searchField: JSearchField) : SearchView {
+class SearchViewImpl(private val searchField: SearchField) : SearchView {
     private lateinit var presenter: SearchPresenter
 
     override fun setPresenter(presenter: SearchPresenter) {

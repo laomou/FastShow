@@ -5,7 +5,7 @@ import java.awt.Graphics
 import java.awt.Graphics2D
 import javax.swing.JTextField
 
-class JSearchField : JTextField() {
+class SearchField : JTextField() {
     private var progress: Int = -1
 
     fun setProgress(value: Int) {

@@ -1,11 +1,8 @@
 package mediator
 
-import model.FileModel
+import model.FileEntry
 import model.FileSystemModel
-import presenter.FileListPresenter
-import presenter.FolderTreePresenter
-import presenter.PathPresenter
-import presenter.SearchPresenter
+import presenter.*
 import view.MainView
 import javax.swing.filechooser.FileSystemView
 
@@ -13,15 +10,24 @@ class FastShowMediator(
     private val fileSystemModel: FileSystemModel,
     private val mainView: MainView
 ) {
+    private lateinit var menuBarPresenter: MenuBarPresenter
+    private lateinit var toolBarPresenter: ToolBarPresenter
     private lateinit var folderTreePresenter: FolderTreePresenter
     private lateinit var fileListPresenter: FileListPresenter
     private lateinit var pathPresenter: PathPresenter
     private lateinit var searchPresenter: SearchPresenter
 
-    private var currentDirectory: FileModel? = null
-    private var lastSearchQuery: String = ""
-
     fun initialize() {
+        menuBarPresenter = MenuBarPresenter(
+            mainView.getMenuBar(),
+            this,
+        )
+
+        toolBarPresenter = ToolBarPresenter(
+            mainView.getToolBar(),
+            this
+        )
+
         folderTreePresenter = FolderTreePresenter(
             mainView.getFolderTreeView(),
             fileSystemModel,
@@ -45,22 +51,28 @@ class FastShowMediator(
             this
         )
 
-        onTreeNodeSelected(FileModel(FileSystemView.getFileSystemView().homeDirectory))
+        onTreeNodeSelected(FileEntry(FileSystemView.getFileSystemView().homeDirectory))
     }
 
-    fun onDirectoryChanged(directory: FileModel) {
-        currentDirectory = directory
-        pathPresenter.setCurrentPath(directory.path)
+    fun showInputDialog(title: String, message: String) : String? {
+        return mainView.showInputDialog(title, message)
+    }
+
+    fun showErrorMessage(message: String) {
+        mainView.showErrorMessage(message)
+    }
+
+    fun onDirectoryChanged(directory: FileEntry) {
+        pathPresenter.setCurrentPath(directory)
         searchPresenter.setCurrentPath(directory)
-        fileListPresenter.setCurrentPath(directory)
+        fileListPresenter.loadDirectoryContents(directory)
         folderTreePresenter.expandToPath(directory)
     }
 
-    fun onTreeNodeSelected(directory: FileModel) {
-        currentDirectory = directory
-        pathPresenter.setCurrentPath(directory.path)
+    fun onTreeNodeSelected(directory: FileEntry) {
+        pathPresenter.setCurrentPath(directory)
         searchPresenter.setCurrentPath(directory)
-        fileListPresenter.setCurrentPath(directory)
+        fileListPresenter.loadDirectoryContents(directory)
     }
 
     fun onEnterSearch() {
@@ -72,8 +84,7 @@ class FastShowMediator(
         fileListPresenter.exitSearch()
     }
 
-    fun onSearchOneResult(fileModel: FileModel) {
-        fileListPresenter.appendSearchResult(fileModel)
+    fun onSearchOneResult(fileEntry: FileEntry) {
+        fileListPresenter.appendSearchResult(fileEntry)
     }
-
 }
