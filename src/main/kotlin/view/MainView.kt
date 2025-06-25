@@ -73,8 +73,8 @@ class MainViewImpl : MainView {
         val fileList = JList<FileEntry>().apply {
             selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
             layoutOrientation = JList.HORIZONTAL_WRAP
-            fixedCellWidth = 120
-            fixedCellHeight = 120
+            fixedCellWidth = 140
+            fixedCellHeight = 170
             cellRenderer = FileListRenderer()
             visibleRowCount = -1
         }
@@ -82,7 +82,7 @@ class MainViewImpl : MainView {
 
         val rightPanel = JPanel(BorderLayout()).apply {
             val topPanel = JPanel(BorderLayout(5, 5)).apply {
-                border = BorderFactory.createEmptyBorder(0, 5, 0, 5)
+                border = BorderFactory.createEmptyBorder(0, 8, 0, 8)
                 val pathPanel = JPanel(BorderLayout()).apply {
                     add(JLabel("路径:"), BorderLayout.WEST)
                     add(pathField, BorderLayout.CENTER)

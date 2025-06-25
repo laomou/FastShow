@@ -10,7 +10,8 @@ import javax.swing.border.EmptyBorder
 class FileListRenderer : JPanel(), ListCellRenderer<FileEntry> {
     private val iconLabel = JLabel()
     private val nameLabel = JLabel()
-    private val folderIcon = UIManager.getIcon("FileView.directoryIcon")
+    private val directoryIcon: Icon? =
+        javaClass.getResource("/folder.png")?.let { ImageIcon(it) } ?: UIManager.getIcon("FileView.directoryIcon")
     private val fileIcon = UIManager.getIcon("FileView.fileIcon")
     private val defaultBorder = createRoundedBorder(Color.GRAY, false)
     private val selectedBorder = createRoundedBorder(Color.BLUE, true)
@@ -22,11 +23,10 @@ class FileListRenderer : JPanel(), ListCellRenderer<FileEntry> {
 
         iconLabel.horizontalAlignment = JLabel.CENTER
         nameLabel.horizontalAlignment = JLabel.CENTER
-        nameLabel.font = Font("SansSerif", Font.PLAIN, 12)
 
         add(iconLabel, BorderLayout.CENTER)
         add(nameLabel, BorderLayout.SOUTH)
-        preferredSize = Dimension(120, 120)
+        preferredSize = Dimension(140, 170)
     }
 
     override fun getListCellRendererComponent(
@@ -37,7 +37,7 @@ class FileListRenderer : JPanel(), ListCellRenderer<FileEntry> {
         cellHasFocus: Boolean
     ): Component {
         border = if (isSelected) selectedBorder else defaultBorder
-        iconLabel.icon = if (value.file.isDirectory) folderIcon else fileIcon
+        iconLabel.icon = if (value.file.isDirectory) directoryIcon else fileIcon
         nameLabel.text = value.name
         toolTipText = value.name
 
@@ -54,7 +54,7 @@ class FileListRenderer : JPanel(), ListCellRenderer<FileEntry> {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
                 g2.color = color
                 g2.stroke = BasicStroke(if (isSelected) 2f else 0.6f)
-                g2.drawRoundRect(x + 1, y + 1, width - 2, height - 2, arc, arc)
+                g2.drawRoundRect(x + 1, y + 1, width - 2, height - 30, arc, arc)
                 g2.dispose()
             }
 
