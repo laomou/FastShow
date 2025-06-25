@@ -1,6 +1,7 @@
 package mediator
 
 import model.FileEntry
+import model.FileListNode
 import model.FileSystemModel
 import presenter.*
 import view.MainView
@@ -84,7 +85,7 @@ class FastShowMediator(
         fileListPresenter.exitSearch()
     }
 
-    fun onSearchOneResult(fileEntry: FileEntry) {
-        fileListPresenter.appendSearchResult(fileEntry)
+    fun onSearchOneResult(node: FileListNode) {
+        fileListPresenter.appendSearchResult(node)
     }
 }

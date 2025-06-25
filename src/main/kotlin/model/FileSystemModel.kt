@@ -9,12 +9,11 @@ import kotlin.io.path.Path
 interface FileSystemModel {
     fun getRoots(): List<FileEntry>
     fun getChildren(parent: FileEntry): List<FileEntry>
-    fun getAllChildren(directory: FileEntry): List<FileEntry>
     fun getParent(child: FileEntry): FileEntry?
     fun moveFiles(sources: List<FileEntry>, destination: FileEntry): Boolean
     fun copyFiles(sources: List<FileEntry>, destination: FileEntry): Boolean
     fun deleteFiles(files: List<FileEntry>): Boolean
-    fun createNewFolder(parent: FileEntry, name: String): FileEntry?
+    fun createNewFolder(parent: FileEntry, name: String): Boolean
     fun renameFile(file: FileEntry, newName: String): Boolean
 }
 
@@ -27,10 +26,6 @@ class DefaultFileSystemModel : FileSystemModel {
         return parent.file.listVisibleChildren()
     }
 
-    override fun getAllChildren(directory: FileEntry): List<FileEntry> {
-        return directory.file.searchRecursively()
-    }
-
     override fun getParent(child: FileEntry): FileEntry? {
         return child.file.parentFile?.let { FileEntry(it) }
     }
@@ -39,8 +34,8 @@ class DefaultFileSystemModel : FileSystemModel {
         return try {
             sources.all { node ->
                 Files.move(
-                    Path(node.path),
-                    Path(destination.path, node.name),
+                    Path(node.absolutePath),
+                    Path(destination.absolutePath, node.name),
                     StandardCopyOption.REPLACE_EXISTING
                 )
                 true
@@ -63,8 +58,8 @@ class DefaultFileSystemModel : FileSystemModel {
                     "$originalName - 副本"
                 }
                 Files.copy(
-                    Path(node.path),
-                    Path(destination.path, newName),
+                    Path(node.absolutePath),
+                    Path(destination.absolutePath, newName),
                     StandardCopyOption.REPLACE_EXISTING
                 )
                 true
@@ -77,7 +72,7 @@ class DefaultFileSystemModel : FileSystemModel {
     override fun deleteFiles(files: List<FileEntry>): Boolean {
         return try {
             files.all { node ->
-                Files.deleteIfExists(Path(node.path))
+                Files.deleteIfExists(Path(node.absolutePath))
                 true
             }
         } catch (e: IOException) {
@@ -85,10 +80,10 @@ class DefaultFileSystemModel : FileSystemModel {
         }
     }
 
-    override fun createNewFolder(parent: FileEntry, name: String): FileEntry? {
+    override fun createNewFolder(parent: FileEntry, name: String): Boolean {
         require(parent.isDirectory)
         val newFolder = File(parent.file, name)
-        return if (newFolder.mkdir()) FileEntry(newFolder) else null
+        return newFolder.mkdir()
     }
 
     override fun renameFile(file: FileEntry, newName: String): Boolean {

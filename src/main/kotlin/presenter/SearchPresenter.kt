@@ -2,6 +2,7 @@ package presenter
 
 import mediator.FastShowMediator
 import model.FileEntry
+import model.FileListNode
 import model.FileSystemModel
 import view.components.SearchView
 import kotlin.concurrent.thread
@@ -27,13 +28,13 @@ class SearchPresenter (
 
             currentDirectory?.let { dir ->
                 thread {
-                    val allFiles = fileSystemModel.getChildren(dir)
+                    val allFiles = fileSystemModel.getChildren(dir).map { FileListNode(it) }.filter { it.isImage || it.isDirectory }
                     val total = allFiles.size
 
                     view.setProgress(0)
-                    allFiles.forEachIndexed { index, file ->
-                        if (file.name.contains(query, ignoreCase = true)) {
-                            mediator.onSearchOneResult(file)
+                    allFiles.forEachIndexed { index, node ->
+                        if (node.fileEntry.name.contains(query, ignoreCase = true)) {
+                            mediator.onSearchOneResult(node)
                         }
 
                         val progress = ((index + 1) * 100) / total

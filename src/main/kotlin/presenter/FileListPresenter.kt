@@ -2,6 +2,7 @@ package presenter
 
 import mediator.FastShowMediator
 import model.FileEntry
+import model.FileListNode
 import model.FileSystemModel
 import model.MenuItem
 import view.components.FileListView
@@ -15,9 +16,9 @@ class FileListPresenter(
     private val mediator: FastShowMediator
 ) {
     private var currentDirectory: FileEntry? = null
-    private var selectedNodeList: List<FileEntry> = arrayListOf()
-    private val listModel = DefaultListModel<FileEntry>()
-    private val searchModel = DefaultListModel<FileEntry>()
+    private var selectedNodeList: List<FileListNode> = arrayListOf()
+    private val listModel = DefaultListModel<FileListNode>()
+    private val searchModel = DefaultListModel<FileListNode>()
     private val clipboard: ClipboardManager = ClipboardManager()
 
 
@@ -26,7 +27,7 @@ class FileListPresenter(
         view.updateModel(listModel)
     }
 
-    fun onListSelected(list: List<FileEntry>) {
+    fun onListSelected(list: List<FileListNode>) {
         selectedNodeList = list
     }
 
@@ -35,9 +36,9 @@ class FileListPresenter(
         view.updateModel(searchModel)
     }
 
-    fun appendSearchResult(file: FileEntry) {
+    fun appendSearchResult(node: FileListNode) {
         SwingUtilities.invokeLater {
-            searchModel.addElement(file)
+            searchModel.addElement(node)
         }
     }
 
@@ -48,7 +49,7 @@ class FileListPresenter(
     fun loadDirectoryContents(directory: FileEntry) {
         currentDirectory = directory
         thread {
-            val files = fileSystemMode.getChildren(directory).filter { it.isImage || it.isDirectory }
+            val files = fileSystemMode.getChildren(directory).map { FileListNode(it) }.filter { it.isImage || it.isDirectory }
             SwingUtilities.invokeLater {
                 listModel.clear()
                 files.forEach { listModel.addElement(it) }
@@ -66,8 +67,8 @@ class FileListPresenter(
         return listOf(
             MenuItem("刷新", { refreshCurrentDirectory() }),
             MenuItem("", { }),
-            MenuItem("剪切", { clipboard.cut(selectedNodeList) }),
-            MenuItem("拷贝", { clipboard.copy(selectedNodeList) }),
+            MenuItem("剪切", { clipboard.cut(selectedNodeList.map { it.fileEntry }) }),
+            MenuItem("拷贝", { clipboard.copy(selectedNodeList.map { it.fileEntry }) }),
             MenuItem(
                 "粘贴",
                 { currentDirectory?.let { clipboard.paste(it, fileSystemMode); refreshCurrentDirectory() } },
@@ -85,14 +86,14 @@ class FileListPresenter(
             }),
             MenuItem(
                 "删除",
-                { fileSystemMode.deleteFiles(selectedNodeList); refreshCurrentDirectory() },
+                { fileSystemMode.deleteFiles(selectedNodeList.map { it.fileEntry }); refreshCurrentDirectory() },
                 selectedNodeList.isNotEmpty()
             ),
             MenuItem("重命名", {
                 selectedNodeList.forEach { it ->
                     val newName = mediator.showInputDialog("重命名", "文件名： ${it.name}\n重命名为：")
                     if (!newName.isNullOrBlank()) {
-                        fileSystemMode.renameFile(it, newName)
+                        fileSystemMode.renameFile(it.fileEntry, newName)
                     }
                 }
                 refreshCurrentDirectory()

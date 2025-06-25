@@ -18,12 +18,12 @@ class ClipboardManager {
 
     fun cut(files: List<FileEntry>) {
         currentOperation = if (files.isEmpty()) Operation.Empty
-        else Operation.Cut(files.distinctBy { it.path })
+        else Operation.Cut(files.distinctBy { it.absolutePath })
     }
 
     fun copy(files: List<FileEntry>) {
         currentOperation = if (files.isEmpty()) Operation.Empty
-        else Operation.Copy(files.distinctBy { it.path })
+        else Operation.Copy(files.distinctBy { it.absolutePath })
     }
 
     fun paste(targetDir: FileEntry, model: FileSystemModel): Boolean {
@@ -34,6 +34,7 @@ class ClipboardManager {
             is Operation.Cut -> model.moveFiles(op.files, targetDir).also {
                 if (it) clear()
             }
+
             Operation.Empty -> false
         }
     }

@@ -16,12 +16,13 @@ class FolderTreePresenter(
     private val fileSystemMode: FileSystemModel,
     private val mediator: FastShowMediator
 ) : TreeWillExpandListener {
+    private val fileSystemView = FileSystemView.getFileSystemView()
+    private val homeDirectory = fileSystemView.homeDirectory
+    private val clipboard: ClipboardManager = ClipboardManager()
     private val treePathCache = mutableMapOf<FileEntry, FolderTreeNode>()
-    private val homeDirectory = FileSystemView.getFileSystemView().homeDirectory
     private lateinit var treeModel: DefaultTreeModel
     private lateinit var rootTreeNode: FolderTreeNode
     private lateinit var selectedTreeNode: FolderTreeNode
-    private val clipboard: ClipboardManager = ClipboardManager()
 
     init {
         view.setPresenter(this)
@@ -32,14 +33,20 @@ class FolderTreePresenter(
         rootTreeNode = FolderTreeNode(FileEntry(homeDirectory), null).apply {
             userObject = "Desktop"
             isLoaded = true
+            icon = fileSystemView.getSystemIcon(homeDirectory)
+            name = "桌面"
 
             val myPCNode = FolderTreeNode(FileEntry(homeDirectory), this).apply {
                 userObject = "MyPC"
                 isLoaded = true
+                icon = fileSystemView.getSystemIcon(homeDirectory)
+                name = "此电脑"
 
-                fileSystemMode.getRoots().forEachIndexed  { idx, drive ->
+                fileSystemMode.getRoots().forEachIndexed { idx, drive ->
                     val driveNode = FolderTreeNode(drive, this).apply {
                         userObject = "Drive_${idx}"
+                        icon = fileSystemView.getSystemIcon(drive.file)
+                        name = fileSystemView.getSystemDisplayName(drive.file)
                     }
                     loadChildren(driveNode)
                     add(driveNode)
@@ -124,7 +131,7 @@ class FolderTreePresenter(
     }
 
     private fun loadChildren(node: FolderTreeNode) {
-        if (node.isLoaded || !node.isDirectory) return
+        if (node.isLoaded) return
 
         node.removeAllChildren()
 

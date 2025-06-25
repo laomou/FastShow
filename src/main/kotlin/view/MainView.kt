@@ -1,6 +1,6 @@
 package view
 
-import model.FileEntry
+import model.FileListNode
 import view.components.*
 import view.components.renderers.FileListRenderer
 import view.components.renderers.FolderTreeCellRenderer
@@ -70,7 +70,7 @@ class MainViewImpl : MainView {
         }
         searchView = SearchViewImpl(searchField)
 
-        val fileList = JList<FileEntry>().apply {
+        val fileList = JList<FileListNode>().apply {
             selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
             layoutOrientation = JList.HORIZONTAL_WRAP
             fixedCellWidth = 140

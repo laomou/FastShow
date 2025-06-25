@@ -17,7 +17,7 @@ class PathPresenter(
     }
 
     fun setCurrentPath(directory: FileEntry) {
-        view.setCurrentPath(directory.path)
+        view.setCurrentPath(directory.absolutePath)
     }
 
     fun showErrorMessage(message: String) {

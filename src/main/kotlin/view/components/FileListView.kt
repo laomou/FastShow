@@ -1,6 +1,6 @@
 package view.components
 
-import model.FileEntry
+import model.FileListNode
 import presenter.FileListPresenter
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -8,10 +8,10 @@ import javax.swing.*
 
 interface FileListView {
     fun setPresenter(presenter: FileListPresenter)
-    fun updateModel(model: DefaultListModel<FileEntry>)
+    fun updateModel(model: DefaultListModel<FileListNode>)
 }
 
-class FileListViewImpl(private val list: JList<FileEntry>) : FileListView {
+class FileListViewImpl(private val list: JList<FileListNode>) : FileListView {
     private lateinit var presenter: FileListPresenter
 
     override fun setPresenter(presenter: FileListPresenter) {
@@ -27,7 +27,7 @@ class FileListViewImpl(private val list: JList<FileEntry>) : FileListView {
                         if (index >= 0) {
                             val element = list.model.getElementAt(index)
                             if (element.isDirectory) {
-                                presenter.changeDirectory(element)
+                                presenter.changeDirectory(element.fileEntry)
                             }
                         }
                     }
@@ -38,7 +38,7 @@ class FileListViewImpl(private val list: JList<FileEntry>) : FileListView {
         })
     }
 
-    override fun updateModel(model: DefaultListModel<FileEntry>) {
+    override fun updateModel(model: DefaultListModel<FileListNode>) {
         SwingUtilities.invokeLater {
             list.model = model
         }

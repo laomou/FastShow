@@ -1,13 +1,13 @@
 package view.components.renderers
 
-import model.FileEntry
+import model.FileListNode
 import java.awt.*
 import javax.swing.*
 import javax.swing.border.Border
 import javax.swing.border.CompoundBorder
 import javax.swing.border.EmptyBorder
 
-class FileListRenderer : JPanel(), ListCellRenderer<FileEntry> {
+class FileListRenderer : JPanel(), ListCellRenderer<FileListNode> {
     private val iconLabel = JLabel()
     private val nameLabel = JLabel()
     private val directoryIcon: Icon? =
@@ -30,15 +30,15 @@ class FileListRenderer : JPanel(), ListCellRenderer<FileEntry> {
     }
 
     override fun getListCellRendererComponent(
-        list: JList<out FileEntry>,
-        value: FileEntry,
+        list: JList<out FileListNode>,
+        value: FileListNode,
         index: Int,
         isSelected: Boolean,
         cellHasFocus: Boolean
     ): Component {
         border = if (isSelected) selectedBorder else defaultBorder
-        iconLabel.icon = if (value.file.isDirectory) directoryIcon else fileIcon
-        nameLabel.text = value.name
+        iconLabel.icon = value.icon ?: if (value.isDirectory) directoryIcon else fileIcon
+        nameLabel.text = value.name ?: value.fileEntry.name
         toolTipText = value.name
 
         return this
