@@ -7,10 +7,12 @@ group = "com.laomou"
 version = "1.0-SNAPSHOT"
 
 repositories {
+    maven("https://maven.aliyun.com/repository/public")
     mavenCentral()
 }
 
 dependencies {
+    implementation("net.coobird:thumbnailator:0.4.20")
     testImplementation(kotlin("test"))
 }
 

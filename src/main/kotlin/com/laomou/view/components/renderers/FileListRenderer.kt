@@ -1,6 +1,7 @@
 package com.laomou.view.components.renderers
 
 import com.laomou.model.FileListNode
+import com.laomou.utils.ThumbnailLoader
 import java.awt.*
 import javax.swing.*
 import javax.swing.border.Border
@@ -41,6 +42,19 @@ class FileListRenderer : JPanel(), ListCellRenderer<FileListNode> {
         nameLabel.text = value.name ?: value.fileEntry.name
         toolTipText = value.name
 
+        if (value.isImage && value.icon == null) {
+            ThumbnailLoader.getThumbnail(value.fileEntry.file, 120, 120, { icon ->
+                value.icon = icon
+                SwingUtilities.invokeLater {
+                    if (icon != null && isVisibleInViewport(list, index)) {
+                        list.getCellBounds(index, index)?.let {
+                            list.repaint(it)
+                        }
+                    }
+                }
+            })
+        }
+
         return this
     }
 
@@ -67,5 +81,10 @@ class FileListRenderer : JPanel(), ListCellRenderer<FileListNode> {
         return CompoundBorder(spacing, CompoundBorder(border, padding))
     }
 
+    private fun isVisibleInViewport(list: JList<*>, index: Int): Boolean {
+        val rect = list.visibleRect
+        val cellBounds = list.getCellBounds(index, index)
+        return cellBounds?.let { rect.intersects(it) } ?: false
+    }
 
 }

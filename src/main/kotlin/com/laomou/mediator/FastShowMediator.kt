@@ -4,7 +4,11 @@ import com.laomou.model.FileEntry
 import com.laomou.model.FileListNode
 import com.laomou.model.FileSystemModel
 import com.laomou.presenter.*
+import com.laomou.utils.ThumbnailLoader
 import com.laomou.view.MainView
+import java.awt.event.WindowAdapter
+import java.awt.event.WindowEvent
+import javax.swing.JOptionPane
 import javax.swing.filechooser.FileSystemView
 
 class FastShowMediator(
@@ -19,6 +23,16 @@ class FastShowMediator(
     private lateinit var searchPresenter: SearchPresenter
 
     fun initialize() {
+        mainView.getFrame().addWindowListener(object : WindowAdapter() {
+            override fun windowClosing(e: WindowEvent?) {
+                val result = mainView.showConfirmDialog("退出确认", "确认退出程序？")
+                if (result == JOptionPane.OK_OPTION) {
+                    ThumbnailLoader.release()
+                }
+                return super.windowClosing(e)
+            }
+        })
+
         menuBarPresenter = MenuBarPresenter(
             mainView.getMenuBar(),
             this,

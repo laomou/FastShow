@@ -21,6 +21,7 @@ interface MainView {
     fun getFrame(): JFrame
     fun showErrorMessage(message: String)
     fun showInputDialog(title: String, message: String): String?
+    fun showConfirmDialog(title: String, message: String): Int
 }
 
 class MainViewImpl : MainView {
@@ -131,5 +132,11 @@ class MainViewImpl : MainView {
 
     override fun showInputDialog(title: String, message: String): String? {
         return JOptionPane.showInputDialog(frame, message, title, JOptionPane.PLAIN_MESSAGE)
+    }
+
+    override fun showConfirmDialog(title: String, message: String): Int {
+        return JOptionPane.showConfirmDialog(
+            frame, message, title, JOptionPane.OK_CANCEL_OPTION
+        )
     }
 }
