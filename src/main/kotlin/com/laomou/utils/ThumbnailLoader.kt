@@ -1,7 +1,6 @@
 package com.laomou.utils
 
-import net.coobird.thumbnailator.Thumbnails
-import java.awt.image.BufferedImage
+import com.github.laomou.thumbnailator.Thumbnails
 import java.io.File
 import java.util.concurrent.Executors
 import javax.swing.ImageIcon
@@ -29,11 +28,8 @@ object ThumbnailLoader {
 
         executor.execute {
             val icon = try {
-                val buffered = Thumbnails.of(imageFile)
-                    .size(width, height)
-                    .keepAspectRatio(true)
-                    .imageType(BufferedImage.TYPE_INT_ARGB)
-                    .asBufferedImage()
+                val buffered =
+                    Thumbnails.generateThumbnail(imageFile.absoluteFile.toString(), width, height).toBufferedImage()
                 ImageIcon(buffered)
             } catch (e: Exception) {
                 e.printStackTrace()
