@@ -8,6 +8,7 @@ import com.laomou.utils.ThumbnailLoader
 import com.laomou.view.MainView
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
+import java.io.File
 import javax.swing.JOptionPane
 import javax.swing.filechooser.FileSystemView
 
@@ -69,12 +70,32 @@ class FastShowMediator(
         onTreeNodeSelected(FileEntry(FileSystemView.getFileSystemView().homeDirectory))
     }
 
-    fun showInputDialog(title: String, message: String) : String? {
+    fun showInputDialog(title: String, message: String): String? {
         return mainView.showInputDialog(title, message)
     }
 
     fun showErrorMessage(message: String) {
         mainView.showErrorMessage(message)
+    }
+
+    fun openImShow(files: List<FileEntry>) {
+        try {
+            val userHome = System.getProperty("user.home")
+            val exePath = "$userHome\\AppData\\Local\\imshow\\imshow.exe"
+            if (File(exePath).exists()) {
+                val command = mutableListOf(exePath)
+                files.forEach { img ->
+                    command.add("--img")
+                    command.add(img.absolutePath)
+                }
+                val process = ProcessBuilder(command)
+                    .directory(File(".")) // 设置工作目录（可选）
+                    .start()
+                process.waitFor()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun onDirectoryChanged(directory: FileEntry) {

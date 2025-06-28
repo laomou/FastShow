@@ -12,7 +12,7 @@ class FileListRenderer : JPanel(), ListCellRenderer<FileListNode> {
     private val iconLabel = JLabel()
     private val nameLabel = JLabel()
     private val directoryIcon: Icon? =
-        javaClass.getResource("/folder.png")?.let { ImageIcon(it) } ?: UIManager.getIcon("FileView.directoryIcon")
+        javaClass.getResource("/icon/folder.png")?.let { ImageIcon(it) } ?: UIManager.getIcon("FileView.directoryIcon")
     private val fileIcon = UIManager.getIcon("FileView.fileIcon")
     private val defaultBorder = createRoundedBorder(Color.GRAY, false)
     private val selectedBorder = createRoundedBorder(Color.BLUE, true)

@@ -12,6 +12,7 @@ repositories {
 }
 
 dependencies {
+    implementation("com.twelvemonkeys.imageio:imageio-jpeg:3.12.0")
     implementation("net.coobird:thumbnailator:0.4.20")
     testImplementation(kotlin("test"))
 }

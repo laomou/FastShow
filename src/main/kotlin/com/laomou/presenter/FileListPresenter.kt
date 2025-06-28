@@ -63,6 +63,12 @@ class FileListPresenter(
         mediator.onDirectoryChanged(directory)
     }
 
+    fun openImShow() {
+        if (selectedNodeList.isNotEmpty()) {
+            mediator.openImShow(selectedNodeList.map { it.fileEntry })
+        }
+    }
+
     fun getContextMenuItems(): List<MenuItem> {
         return listOf(
             MenuItem("刷新", { refreshCurrentDirectory() }),

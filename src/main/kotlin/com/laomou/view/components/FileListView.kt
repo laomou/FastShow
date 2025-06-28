@@ -2,6 +2,8 @@ package com.laomou.view.components
 
 import com.laomou.model.FileListNode
 import com.laomou.presenter.FileListPresenter
+import java.awt.event.KeyAdapter
+import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.*
@@ -16,6 +18,13 @@ class FileListViewImpl(private val list: JList<FileListNode>) : FileListView {
 
     override fun setPresenter(presenter: FileListPresenter) {
         this.presenter = presenter
+        list.addKeyListener(object : KeyAdapter() {
+            override fun keyPressed(e: KeyEvent) {
+                if (e.keyCode == KeyEvent.VK_P) {
+                    presenter.openImShow()
+                }
+            }
+        })
         list.addListSelectionListener {
             presenter.onListSelected(list.selectedValuesList)
         }
@@ -28,6 +37,8 @@ class FileListViewImpl(private val list: JList<FileListNode>) : FileListView {
                             val element = list.model.getElementAt(index)
                             if (element.isDirectory) {
                                 presenter.changeDirectory(element.fileEntry)
+                            } else if (element.isImage) {
+                                presenter.openImShow()
                             }
                         }
                     }
