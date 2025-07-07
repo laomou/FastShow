@@ -18,7 +18,26 @@ qt_add_qml_module(viewer
     QML_FILES
         qml/ImageTile.qml
         qml/ImageViewer.qml
-        SOURCES cpp/rgba_image_provider.h cpp/rgba_image_provider.cpp
+        qml/IconButton.qml
+    SOURCES
+        cpp/rgba_image_provider.h
+        cpp/rgba_image_provider.cpp
+        cpp/jraw_image_provider.h
+        cpp/jraw_image_provider.cpp
+)
+
+qt_add_resources(viewer "images"
+    PREFIX "/"
+    FILES
+        images/right-cmp.svg
+        images/left-cmp.svg
+        images/rotate-right.svg
+        images/rotate-left.svg
+        images/zoom-in.svg
+        images/zoom-out.svg
+        images/zoom-actual.svg
+        images/zoom-adapt.svg
+        images/flip-h.svg
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

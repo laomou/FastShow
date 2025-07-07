@@ -20,11 +20,15 @@ Rectangle {
 
     QtObject {
         id: internal
+        property real initScale: 1.0
+        property real baseScale: 1.0
         property real minScale: 0.1
         property real maxScale: 50.0
         property real scaleFactor: 1.1
         property bool dragging: false
         property point lastPos: Qt.point(0, 0)
+        property int originalWidth: 0
+        property int originalHeight: 0
         property var originalState: ({})
     }
 
@@ -88,68 +92,91 @@ Rectangle {
         id: toolbar
         width: parent.width
         height: 40
+        color: "#99000000"
         z: 1
 
         RowLayout {
             anchors.fill: parent
-            spacing: 8
+            spacing: 2
             anchors.margins: 2
 
-            Row {
+            RowLayout {
                 spacing: 2
                 Layout.alignment: Qt.AlignLeft
-                Button {
-                    text: "-"
+                IconButton {
+                    iconSource: "qrc:/images/zoom-out.svg"
                     onClicked: function () {
                         tile.zoom(1 / internal.scaleFactor)
                     }
                 }
                 Label {
-                    text: "缩放: " + (tile.scale * 100).toFixed(0) + "%"
-                    color: "black"
+                    text: (tile.scale * 100).toFixed(0) + "%"
+                    color: "white"
+                    Layout.preferredWidth: 60
+                    Layout.preferredHeight: parent.height
+                    Layout.alignment: Qt.AlignVCenter
+                    verticalAlignment: Text.AlignVCenter
+                    horizontalAlignment: Text.AlignHCenter
                 }
-                Button {
-                    text: "+"
+                IconButton {
+                    iconSource: "qrc:/images/zoom-in.svg"
                     onClicked: function () {
                         tile.zoom(internal.scaleFactor)
                     }
                 }
             }
 
-            Row {
+            RowLayout {
                 spacing: 2
                 Layout.alignment: Qt.AlignLeft
-                Button {
-                    text: "↺"
+                IconButton {
+                    iconSource: "qrc:/images/zoom-actual.svg"
+                    onClicked: function () {
+                        tile.scale = 1.0
+                    }
+                }
+                IconButton {
+                    iconSource: "qrc:/images/zoom-adapt.svg"
+                    onClicked: function () {
+                        tile.scale = internal.initScale
+                    }
+                }
+            }
+
+            RowLayout {
+                spacing: 2
+                Layout.alignment: Qt.AlignLeft
+                IconButton {
+                    iconSource: "qrc:/images/rotate-left.svg"
                     onClicked: function () {
                         tile.rotate(-90)
                     }
                 }
-                Button {
-                    text: "↻"
+                IconButton {
+                    iconSource: "qrc:/images/rotate-right.svg"
                     onClicked: function () {
                         tile.rotate(90)
                     }
                 }
             }
 
-            Row {
+            RowLayout {
                 spacing: 2
                 Layout.alignment: Qt.AlignLeft
-                Button {
-                    text: "水平翻转"
+                IconButton {
+                    iconSource: "qrc:/images/flip-h.svg"
                     onClicked: function () {
                         tile.flip_horizontal()
                     }
                 }
             }
 
-            Row {
+            RowLayout {
                 spacing: 2
                 Layout.alignment: Qt.AlignLeft
-                Button {
-                    visible: (index >= 1)
-                    text: "向左叠加"
+                IconButton {
+                    visible: (index % 2 === 1)
+                    iconSource: "qrc:/images/left-cmp.svg"
                     onPressed: function () {
                         overlayRequested({
                                              "sourceIndex": index,
@@ -165,8 +192,9 @@ Rectangle {
                                          })
                     }
                 }
-                Button {
-                    text: "向右叠加"
+                IconButton {
+                    visible: (index % 2 === 0)
+                    iconSource: "qrc:/images/right-cmp.svg"
                     onPressed: function () {
                         overlayRequested({
                                              "sourceIndex": index,
@@ -184,7 +212,9 @@ Rectangle {
                 }
             }
 
-            Item { Layout.fillWidth: true }
+            Item {
+                Layout.fillWidth: true
+            }
         }
     }
 
@@ -198,26 +228,41 @@ Rectangle {
         }
         source: imageSource
         fillMode: Image.PreserveAspectFit
+        visible: status === Image.Ready
         smooth: true
         mipmap: true
 
         transform: [
-            Translate {
-                x: offsetX
-                y: offsetY
-            },
             Scale {
                 origin.x: contentImage.width / 2
                 origin.y: contentImage.height / 2
-                xScale: flip_h ? scale * -1 : scale
-                yScale: scale
+                xScale: (flip_h ? -1 : 1) * (scale / internal.baseScale)
+                yScale: scale / internal.baseScale
             },
             Rotation {
                 origin.x: contentImage.width / 2
                 origin.y: contentImage.height / 2
                 angle: rotation
+            },
+            Translate {
+                x: offsetX
+                y: offsetY
             }
         ]
+
+        onStatusChanged: {
+            if (status === Image.Ready) {
+                Qt.callLater(() => {
+                                 internal.baseScale = Math.min(
+                                     width / sourceSize.width,
+                                     height / sourceSize.height)
+                                 internal.initScale = Math.max(
+                                     0.1,
+                                     Math.round(internal.baseScale * 10) / 10)
+                                 tile.scale = internal.initScale
+                             })
+            }
+        }
     }
 
     MouseArea {

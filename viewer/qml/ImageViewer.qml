@@ -9,7 +9,7 @@ Window {
     title: "Image Viewer"
     visibility: Window.FullScreen
 
-    property var imagePaths: ["image://rgba/D:/Camera/IMG_20181024_143156_HDR.jpg", "image://rgba/D:/Camera/IMG_20181024_143156_HDR.jpg", "image://rgba/D:/Camera/IMG_20181024_143156_HDR.jpg"]
+    property var imagePaths: ["image://rgba/D:/Camera/1597566775973.jpg", "image://rgba/D:/Camera/1597566775973.jpg"]
 
     property int activeIndex: -1
     property var tileModel: imagePaths.map((path, idx) => ({
