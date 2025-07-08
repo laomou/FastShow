@@ -3,15 +3,15 @@
 
 #include <QQuickImageProvider>
 
-class RGBAImageProvider : public QQuickImageProvider
-{
-public:
-    RGBAImageProvider() : QQuickImageProvider(QQuickImageProvider::Image) {}
+class RGBAImageProvider : public QQuickImageProvider {
+ public:
+  RGBAImageProvider() : QQuickImageProvider(QQuickImageProvider::Image) {}
 
-    QImage requestImage(const QString &id, QSize *size, const QSize &requestedSize) override;
+  QImage requestImage(const QString &id, QSize *size,
+                      const QSize &requestedSize) override;
 
-private:
-    QImage createErrorImage(const QString &message);
+ private:
+  QImage createErrorImage(const QString &message);
 };
 
-#endif // RGBA_IMAGE_PROVIDER_H
+#endif  // RGBA_IMAGE_PROVIDER_H

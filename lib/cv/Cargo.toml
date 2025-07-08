@@ -1,0 +1,14 @@
+[package]
+name = "cv"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+ndarray = { version = "0.15", features = ["rayon"] }
+rayon = "1.8"
+
+[profile.release]
+debug = true

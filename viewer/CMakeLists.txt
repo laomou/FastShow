@@ -52,7 +52,7 @@ set_target_properties(viewer PROPERTIES
 )
 
 target_link_libraries(viewer
-    PRIVATE Qt6::Quick
+    PRIVATE Qt6::Quick cv_rust
 )
 
 include(GNUInstallDirs)

@@ -7,11 +7,11 @@ Rectangle {
     property int index: -1
     property string imageSource
     property bool isActive: false
-    property real scale: 1.0
+    property real userScale: 1.0
     property real offsetX: 0
     property real offsetY: 0
     property real rotation: 0
-    property bool flip_h: false
+    property bool flipH: false
 
     signal toggleActive(int index)
     signal translateUpdated(var data)
@@ -20,15 +20,14 @@ Rectangle {
 
     QtObject {
         id: internal
-        property real initScale: 1.0
         property real baseScale: 1.0
         property real minScale: 0.1
         property real maxScale: 50.0
         property real scaleFactor: 1.1
-        property bool dragging: false
-        property point lastPos: Qt.point(0, 0)
-        property int originalWidth: 0
-        property int originalHeight: 0
+        property int imgWidth: 0
+        property int imgHeight: 0
+        property real scaleWidth: 1.0
+        property real scaleHeight: 1.0
         property var originalState: ({})
     }
 
@@ -37,66 +36,226 @@ Rectangle {
         color: isActive ? "#FF3B30" : "#FFFFFF"
     }
     clip: true
-    antialiasing: true
+
+    function clamp(min, max, v) {
+        return v < min ? min : (v > max ? max : v)
+    }
 
     function translate(dx, dy) {
-        offsetX += dx
-        offsetY += dy
+        const scaledW = internal.scaleWidth
+        const scaledH = internal.scaleHeight
+        let dispW, dispH
+        if (rotation % 180 === 0) {
+            dispW = scaledW
+            dispH = scaledH
+        } else {
+            dispW = scaledH
+            dispH = scaledW
+        }
+
+        const offsetLimitX = Math.max((dispW - img.width) / 2, 0)
+        const offsetLimitY = Math.max((dispH - img.height) / 2, 0)
+
+        offsetX = clamp(-offsetLimitX, offsetLimitX, offsetX + dx)
+        offsetY = clamp(-offsetLimitY, offsetLimitY, offsetY + dy)
     }
 
     function zoom(factor) {
-        scale = Math.max(internal.minScale, Math.min(internal.maxScale,
-                                                     scale * factor))
+        userScale = clamp(internal.minScale, internal.maxScale,
+                          userScale * factor)
+
+        if (userScale <= internal.baseScale) {
+            offsetX = offsetY = 0
+        }
+
+        internal.scaleWidth = internal.imgWidth * userScale
+        internal.scaleHeight = internal.imgHeight * userScale
     }
 
     function rotate(angle) {
-        rotation += angle
+        rotation = (rotation + angle) % 360
+        if (rotation < 0) {
+            rotation += 360
+        }
     }
 
     function flip_horizontal() {
-        flip_h = !flip_h
+        flipH = !flipH
     }
 
     function overlay(targetTile) {
         internal.originalState = {
             "imageSource": imageSource,
-            "scale": scale,
+            "userScale": userScale,
             "offsetX": offsetX,
             "offsetY": offsetY,
             "rotation": rotation,
-            "flip_h": flip_h
+            "flipH": flipH
         }
 
         if (targetTile) {
             imageSource = targetTile.imageSource
-            scale = targetTile.scale
+            userScale = targetTile.userScale
             offsetX = targetTile.offsetX
             offsetY = targetTile.offsetY
             rotation = targetTile.rotation
-            flip_h = targetTile.flip_h
+            flipH = targetTile.flipH
         }
     }
 
     function cancelOverlay() {
-        if (internal.originalState) {
-            imageSource = internal.originalState.imageSource
-            scale = internal.originalState.scale
-            offsetX = internal.originalState.offsetX
-            offsetY = internal.originalState.offsetY
-            rotation = internal.originalState.rotation
-            flip_h = internal.originalState.flip_h
+        var s = internal.originalState
+        if (s) {
+            imageSource = s.imageSource
+            userScale = s.userScale
+            offsetX = s.offsetX
+            offsetY = s.offsetY
+            rotation = s.rotation
+            flipH = s.flipH
+        }
+    }
+
+    Image {
+        id: img
+        anchors.fill: tile
+        source: imageSource
+        fillMode: Image.PreserveAspectFit
+        visible: status === Image.Ready
+        smooth: true
+        mipmap: true
+
+        transform: Matrix4x4 {
+            matrix: {
+                var m = Qt.matrix4x4()
+                const cx = width / 2
+                const cy = height / 2
+                var localOffsetX = tile.offsetX, localOffsetY = tile.offsetY
+                m.translate(Qt.vector3d(cx, cy, 0))
+                if (tile.flipH) {
+                    m.scale(-1, 1, 1)
+                }
+                m.rotate(tile.rotation, Qt.vector3d(0, 0, 1))
+                m.scale(tile.userScale / internal.baseScale,
+                        tile.userScale / internal.baseScale, 1)
+                m.translate(Qt.vector3d(-cx, -cy, 0))
+                if (tile.flipH) {
+                    localOffsetX *= -1
+                }
+                if (tile.rotation === 90) {
+                    localOffsetX = tile.offsetY
+                    localOffsetY = -tile.offsetX
+                } else if (tile.rotation === 180) {
+                    localOffsetX = -tile.offsetX
+                    localOffsetY = -tile.offsetY
+                } else if (tile.rotation === 270) {
+                    localOffsetX = -tile.offsetY
+                    localOffsetY = tile.offsetX
+                }
+                m.translate(Qt.vector3d(localOffsetX, localOffsetY, 0))
+                return m
+            }
+        }
+
+        onStatusChanged: {
+            if (status === Image.Ready) {
+                Qt.callLater(() => {
+                                 internal.imgWidth = sourceSize.width
+                                 internal.imgHeight = sourceSize.height
+                                 internal.baseScale = Math.min(
+                                     img.width / sourceSize.width,
+                                     img.height / sourceSize.height)
+                                 tile.userScale = internal.baseScale
+                             })
+            }
+        }
+    }
+
+    Rectangle {
+        anchors.fill: tile
+        color: "transparent"
+        visible: isActive
+        Rectangle {
+            width: 1
+            height: 24
+            color: "red"
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.horizontalCenter: parent.horizontalCenter
+        }
+
+        Rectangle {
+            width: 24
+            height: 1
+            color: "red"
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.verticalCenter: parent.verticalCenter
+        }
+    }
+
+    MouseArea {
+        anchors {
+            left: tile.left
+            right: tile.right
+            top: toolbar.bottom
+        }
+        height: tile.height - toolbar.height
+        acceptedButtons: Qt.LeftButton
+        hoverEnabled: true
+        scrollGestureEnabled: false
+
+        property bool isDragging: false
+        property point lastPos: Qt.point(0, 0)
+
+        onPressed: function (event) {
+            if (event.button === Qt.LeftButton) {
+                isDragging = true
+                lastPos = Qt.point(event.x, event.y)
+            }
+        }
+
+        onReleased: function (event) {
+            isDragging = false
+        }
+
+        onPositionChanged: function (event) {
+            if (isDragging) {
+                const dx = event.x - lastPos.x
+                const dy = event.y - lastPos.y
+                lastPos = Qt.point(event.x, event.y)
+
+                translate(dx, dy)
+
+                translateUpdated({
+                                     "sourceIndex": index,
+                                     "dx": dx,
+                                     "dy": dy
+                                 })
+            }
+        }
+
+        onWheel: function (event) {
+            const factor = event.angleDelta.y > 0 ? internal.scaleFactor : 1 / internal.scaleFactor
+
+            zoom(factor)
+
+            zoomUpdated({
+                            "sourceIndex": index,
+                            "factor": factor
+                        })
+            event.accepted = true
+        }
+
+        onDoubleClicked: function () {
+            toggleActive(index)
         }
     }
 
     Rectangle {
         id: toolbar
-        width: parent.width
-        height: 40
+        width: tile.width
+        height: 32
         color: "#99000000"
-        z: 1
 
         RowLayout {
-            anchors.fill: parent
             spacing: 2
             anchors.margins: 2
 
@@ -110,7 +269,7 @@ Rectangle {
                     }
                 }
                 Label {
-                    text: (tile.scale * 100).toFixed(0) + "%"
+                    text: (tile.userScale * 100).toFixed(0) + "%"
                     color: "white"
                     Layout.preferredWidth: 60
                     Layout.preferredHeight: parent.height
@@ -132,13 +291,15 @@ Rectangle {
                 IconButton {
                     iconSource: "qrc:/images/zoom-actual.svg"
                     onClicked: function () {
-                        tile.scale = 1.0
+                        tile.userScale = 1.0
+                        tile.offsetX = tile.offsetY = 0
                     }
                 }
                 IconButton {
                     iconSource: "qrc:/images/zoom-adapt.svg"
                     onClicked: function () {
-                        tile.scale = internal.initScale
+                        tile.userScale = internal.baseScale
+                        tile.offsetX = tile.offsetY = 0
                     }
                 }
             }
@@ -214,111 +375,8 @@ Rectangle {
 
             Item {
                 Layout.fillWidth: true
+                Layout.fillHeight: true
             }
-        }
-    }
-
-    Image {
-        id: contentImage
-        anchors {
-            left: parent.left
-            right: parent.right
-            top: toolbar.bottom
-            bottom: parent.bottom
-        }
-        source: imageSource
-        fillMode: Image.PreserveAspectFit
-        visible: status === Image.Ready
-        smooth: true
-        mipmap: true
-
-        transform: [
-            Scale {
-                origin.x: contentImage.width / 2
-                origin.y: contentImage.height / 2
-                xScale: (flip_h ? -1 : 1) * (scale / internal.baseScale)
-                yScale: scale / internal.baseScale
-            },
-            Rotation {
-                origin.x: contentImage.width / 2
-                origin.y: contentImage.height / 2
-                angle: rotation
-            },
-            Translate {
-                x: offsetX
-                y: offsetY
-            }
-        ]
-
-        onStatusChanged: {
-            if (status === Image.Ready) {
-                Qt.callLater(() => {
-                                 internal.baseScale = Math.min(
-                                     width / sourceSize.width,
-                                     height / sourceSize.height)
-                                 internal.initScale = Math.max(
-                                     0.1,
-                                     Math.round(internal.baseScale * 10) / 10)
-                                 tile.scale = internal.initScale
-                             })
-            }
-        }
-    }
-
-    MouseArea {
-        anchors {
-            left: parent.left
-            right: parent.right
-            top: toolbar.bottom
-            bottom: parent.bottom
-        }
-        acceptedButtons: Qt.LeftButton
-        hoverEnabled: true
-        scrollGestureEnabled: false
-
-        onPressed: function (event) {
-            if (event.button === Qt.LeftButton) {
-                internal.dragging = true
-                internal.lastPos = Qt.point(event.x, event.y)
-            }
-        }
-
-        onReleased: function (event) {
-            internal.dragging = false
-        }
-
-        onPositionChanged: function (event) {
-            if (internal.dragging) {
-                const dx = event.x - internal.lastPos.x
-                const dy = event.y - internal.lastPos.y
-                internal.lastPos = Qt.point(event.x, event.y)
-
-                translate(dx, dy)
-
-                translateUpdated({
-                                     "sourceIndex": index,
-                                     "dx": dx,
-                                     "dy": dy
-                                 })
-            }
-        }
-
-        onWheel: function (event) {
-            const delta = event.angleDelta.y > 0 ? -1 : 1
-            const factor = delta > 0 ? 1 / internal.scaleFactor : internal.scaleFactor
-
-            zoom(factor)
-
-            zoomUpdated({
-                            "sourceIndex": index,
-                            "factor": factor
-                        })
-
-            event.accepted = true
-        }
-
-        onDoubleClicked: function () {
-            toggleActive(index)
         }
     }
 }

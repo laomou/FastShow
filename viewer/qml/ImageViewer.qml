@@ -9,7 +9,7 @@ Window {
     title: "Image Viewer"
     visibility: Window.FullScreen
 
-    property var imagePaths: ["image://rgba/D:/Camera/1597566775973.jpg", "image://rgba/D:/Camera/1597566775973.jpg"]
+    property var imagePaths: []
 
     property int activeIndex: -1
     property var tileModel: imagePaths.map((path, idx) => ({
@@ -37,15 +37,17 @@ Window {
         anchors.fill: parent
         columns: calculateGridLayout(imagePaths.length).cols
         rows: calculateGridLayout(imagePaths.length).rows
-        columnSpacing: 2
-        rowSpacing: 2
+        columnSpacing: 1
+        rowSpacing: 1
 
         Repeater {
             id: repeater
             model: tileModel
 
-            delegate: ImageTile {
+            ImageTile {
                 index: modelData.index
+                Layout.fillWidth: true
+                Layout.fillHeight: true
                 imageSource: modelData.imageSource
                 isActive: root.activeIndex === index
 
@@ -92,9 +94,6 @@ Window {
                         }
                     }
                 }
-
-                Layout.fillWidth: true
-                Layout.fillHeight: true
             }
         }
     }
