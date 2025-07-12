@@ -1,14 +1,15 @@
 #ifndef RGBA_IMAGE_PROVIDER_H
 #define RGBA_IMAGE_PROVIDER_H
 
-#include <QQuickImageProvider>
+#include "cache_image_provider.h"
 
-class RGBAImageProvider : public QQuickImageProvider {
+class RGBAImageProvider : public CacheImageProvider {
  public:
-  RGBAImageProvider() : QQuickImageProvider(QQuickImageProvider::Image) {}
+  RGBAImageProvider() : CacheImageProvider() {}
 
-  QImage requestImage(const QString &id, QSize *size,
-                      const QSize &requestedSize) override;
+  QString generateCacheKey(const QString& id) override;
+
+  QImage generateImage(const QString &id) override;
 
  private:
   QImage createErrorImage(const QString &message);

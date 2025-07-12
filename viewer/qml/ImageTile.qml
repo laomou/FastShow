@@ -22,7 +22,7 @@ Rectangle {
         id: internal
         property real baseScale: 1.0
         property real minScale: 0.1
-        property real maxScale: 50.0
+        property real maxScale: 8.0
         property real scaleFactor: 1.1
         property int imgWidth: 0
         property int imgHeight: 0
@@ -37,8 +37,8 @@ Rectangle {
     }
     clip: true
 
-    function clamp(min, max, v) {
-        return v < min ? min : (v > max ? max : v)
+    function clamp(min, max, value) {
+        return Math.min(max, Math.max(min, value))
     }
 
     function translate(dx, dy) {
@@ -126,18 +126,18 @@ Rectangle {
 
         transform: Matrix4x4 {
             matrix: {
-                var m = Qt.matrix4x4()
+                let m = Qt.matrix4x4()
                 const cx = width / 2
                 const cy = height / 2
-                var localOffsetX = tile.offsetX, localOffsetY = tile.offsetY
+                const scale = tile.userScale / internal.baseScale
                 m.translate(Qt.vector3d(cx, cy, 0))
                 if (tile.flipH) {
                     m.scale(-1, 1, 1)
                 }
                 m.rotate(tile.rotation, Qt.vector3d(0, 0, 1))
-                m.scale(tile.userScale / internal.baseScale,
-                        tile.userScale / internal.baseScale, 1)
+                m.scale(scale, scale, 1)
                 m.translate(Qt.vector3d(-cx, -cy, 0))
+                let localOffsetX, localOffsetY
                 if (tile.flipH) {
                     localOffsetX *= -1
                 }
@@ -150,6 +150,9 @@ Rectangle {
                 } else if (tile.rotation === 270) {
                     localOffsetX = -tile.offsetY
                     localOffsetY = tile.offsetX
+                } else {
+                    localOffsetX = tile.offsetX
+                    localOffsetY = tile.offsetY
                 }
                 m.translate(Qt.vector3d(localOffsetX, localOffsetY, 0))
                 return m
@@ -162,8 +165,8 @@ Rectangle {
                                  internal.imgWidth = sourceSize.width
                                  internal.imgHeight = sourceSize.height
                                  internal.baseScale = Math.min(
-                                     img.width / sourceSize.width,
-                                     img.height / sourceSize.height)
+                                     img.width / internal.imgWidth,
+                                     img.height / internal.imgHeight)
                                  tile.userScale = internal.baseScale
                              })
             }
@@ -257,7 +260,6 @@ Rectangle {
 
         RowLayout {
             spacing: 2
-            anchors.margins: 2
 
             RowLayout {
                 spacing: 2

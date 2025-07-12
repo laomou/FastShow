@@ -3,6 +3,7 @@
 #include <QColorSpace>
 #include <QFileInfo>
 #include <QPainter>
+#include <QCryptographicHash>
 
 #include "cv/cv_core.h"
 
@@ -14,9 +15,9 @@ QImage JRawImageProvider::createErrorImage(const QString& message) {
   return img;
 }
 
-bool JRawImageProvider::readMetadata(const QString& rawPath,
+bool JRawImageProvider::readMetadata(const QString& path,
                                      RawMetadata& meta) {
-  QFileInfo fileInfo(rawPath);
+  QFileInfo fileInfo(path);
   QFile metaFile(fileInfo.path() + "/jiigan_siq_sdk_dump_metadata.txt");
   if (!metaFile.open(QIODevice::ReadOnly)) return false;
 
@@ -66,9 +67,9 @@ bool JRawImageProvider::readMetadata(const QString& rawPath,
   return meta.width > 0 && meta.height > 0;
 }
 
-QImage JRawImageProvider::processRawPipeline(const QString& rawPath,
+QImage JRawImageProvider::processRawPipeline(const QString& path,
                                              const RawMetadata& meta) {
-  QFile file(rawPath);
+  QFile file(path);
   if (!file.open(QIODevice::ReadOnly)) {
     return createErrorImage("Cannot open RAW file");
   }
@@ -113,8 +114,23 @@ QImage JRawImageProvider::processRawPipeline(const QString& rawPath,
   return rgbImage;
 }
 
-QImage JRawImageProvider::requestImage(const QString& id, QSize* size,
-                                       const QSize& requestedSize) {
+
+QString JRawImageProvider::generateCacheKey(const QString& id) {
+    QFile file(id);
+    if (!file.open(QIODevice::ReadOnly)) {
+        return QString();
+    }
+
+    qint64 bytesToRead = 1024 * 1024;
+    bytesToRead = qMin(bytesToRead, file.size());
+
+    QCryptographicHash hash(QCryptographicHash::Md5);
+    hash.addData(file.read(bytesToRead));
+
+    return hash.result().toHex();
+}
+
+QImage JRawImageProvider::generateImage(const QString& id) {
   QString rawPath = id;
   if (!QFileInfo::exists(rawPath)) {
     return createErrorImage("File not found");
@@ -130,14 +146,5 @@ QImage JRawImageProvider::requestImage(const QString& id, QSize* size,
     return createErrorImage("Failed to process RAW");
   }
 
-  if (requestedSize.isValid()) {
-    return image.scaled(requestedSize, Qt::KeepAspectRatio,
-                        Qt::SmoothTransformation);
-  }
-
-  if (size) {
-    *size = image.size();
-  }
-
-  return image;
+  return  image;
 }

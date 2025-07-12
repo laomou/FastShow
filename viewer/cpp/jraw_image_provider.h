@@ -1,7 +1,7 @@
 #ifndef JRAW_IMAGE_PROVIDER_H
 #define JRAW_IMAGE_PROVIDER_H
 
-#include <QQuickImageProvider>
+#include "cache_image_provider.h"
 
 struct RawMetadata {
   int width = 0;
@@ -13,19 +13,20 @@ struct RawMetadata {
   std::array<float, 9> ccm = {1, 0, 0, 0, 1, 0, 0, 0, 1};
 };
 
-class JRawImageProvider : public QQuickImageProvider {
+class JRawImageProvider : public CacheImageProvider {
  public:
-  JRawImageProvider() : QQuickImageProvider(QQuickImageProvider::Image) {}
+  JRawImageProvider() : CacheImageProvider() {}
 
-  QImage requestImage(const QString& id, QSize* size,
-                      const QSize& requestedSize) override;
+  QString generateCacheKey(const QString& id) override;
+
+  QImage generateImage(const QString& id) override;
 
  private:
   QImage createErrorImage(const QString& message);
 
-  bool readMetadata(const QString& rawPath, RawMetadata& meta);
+  bool readMetadata(const QString& path, RawMetadata& meta);
 
-  QImage processRawPipeline(const QString& rawPath, const RawMetadata& meta);
+  QImage processRawPipeline(const QString& path, const RawMetadata& meta);
 };
 
 #endif  // JG_RAW_IMAGE_PROVIDER_H

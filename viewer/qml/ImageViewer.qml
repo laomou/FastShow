@@ -37,19 +37,21 @@ Window {
         anchors.fill: parent
         columns: calculateGridLayout(imagePaths.length).cols
         rows: calculateGridLayout(imagePaths.length).rows
-        columnSpacing: 1
-        rowSpacing: 1
+        columnSpacing: 2
+        rowSpacing: 2
 
         Repeater {
             id: repeater
             model: tileModel
 
             ImageTile {
+                color: repeater.count === 1 ? "black" : "#808080"
                 index: modelData.index
-                Layout.fillWidth: true
-                Layout.fillHeight: true
                 imageSource: modelData.imageSource
                 isActive: root.activeIndex === index
+
+                Layout.fillWidth: true
+                Layout.fillHeight: true
 
                 onToggleActive: function (index) {
                     root.activeIndex = (root.activeIndex === index) ? -1 : index
@@ -100,6 +102,8 @@ Window {
 
     Shortcut {
         sequence: "Escape"
-        onActivated: Qt.quit()
+        onActivated: function () {
+            Qt.quit()
+        }
     }
 }

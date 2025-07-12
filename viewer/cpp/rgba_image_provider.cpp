@@ -3,6 +3,7 @@
 #include <QColorSpace>
 #include <QFileInfo>
 #include <QPainter>
+#include <QCryptographicHash>
 
 QImage RGBAImageProvider::createErrorImage(const QString &message) {
   QImage img(256, 256, QImage::Format_RGB888);
@@ -12,8 +13,22 @@ QImage RGBAImageProvider::createErrorImage(const QString &message) {
   return img;
 }
 
-QImage RGBAImageProvider::requestImage(const QString &id, QSize *size,
-                                       const QSize &requestedSize) {
+QString RGBAImageProvider::generateCacheKey(const QString& id) {
+    QFile file(id);
+    if (!file.open(QIODevice::ReadOnly)) {
+        return QString();
+    }
+
+    qint64 bytesToRead = 1024 * 1024;
+    bytesToRead = qMin(bytesToRead, file.size());
+
+    QCryptographicHash hash(QCryptographicHash::Md5);
+    hash.addData(file.read(bytesToRead));
+
+    return hash.result().toHex();
+}
+
+QImage RGBAImageProvider::generateImage(const QString &id) {
   QString filePath = id;
   if (!QFileInfo::exists(filePath)) {
     return createErrorImage("File not found");
@@ -21,7 +36,7 @@ QImage RGBAImageProvider::requestImage(const QString &id, QSize *size,
 
   QImage image(filePath);
   if (image.isNull()) {
-    return createErrorImage("Invalid image");
+      return createErrorImage("Invalid image");
   }
 
   QImage::Format targetFormat =
@@ -33,17 +48,8 @@ QImage RGBAImageProvider::requestImage(const QString &id, QSize *size,
 
   QColorSpace colorSpace = image.colorSpace();
   if (colorSpace.isValid() && colorSpace != QColorSpace::SRgb) {
-    image = image.convertedToColorSpace(QColorSpace::SRgb, targetFormat);
+      image = image.convertedToColorSpace(QColorSpace::SRgb, targetFormat);
   }
 
-  if (requestedSize.isValid()) {
-    return image.scaled(requestedSize, Qt::KeepAspectRatio,
-                        Qt::SmoothTransformation);
-  }
-
-  if (size) {
-    *size = image.size();
-  }
-
-  return image;
+  return  image;
 }
