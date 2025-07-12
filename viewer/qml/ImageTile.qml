@@ -44,7 +44,9 @@ Rectangle {
     }
 
     function translate(dx, dy) {
-        const ratio = img.width / internal.dispWidth
+        const ratio = (internal.dispWidth
+                       > internal.dispHeight) ? img.width / internal.dispWidth : img.height
+                                                / internal.dispHeight
         const offsetLimitX = Math.max(
                                (internal.dispWidth - img.width) / 2 * ratio, 0)
         const offsetLimitY = Math.max(
@@ -58,7 +60,9 @@ Rectangle {
         userScale = clamp(internal.minScale, internal.maxScale,
                           userScale * factor)
 
-        const ratio = img.width / internal.dispWidth
+        const ratio = (internal.dispWidth
+                       > internal.dispHeight) ? img.width / internal.dispWidth : img.height
+                                                / internal.dispHeight
         const offsetLimitX = Math.max(
                                (internal.dispWidth - img.width) / 2 * ratio, 0)
         const offsetLimitY = Math.max(
