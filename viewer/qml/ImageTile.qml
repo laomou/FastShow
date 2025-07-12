@@ -22,12 +22,14 @@ Rectangle {
         id: internal
         property real baseScale: 1.0
         property real minScale: 0.1
-        property real maxScale: 8.0
+        property real maxScale: 50.0
         property real scaleFactor: 1.1
         property int imgWidth: 0
         property int imgHeight: 0
-        property real scaleWidth: 1.0
-        property real scaleHeight: 1.0
+        property real scaleWidth: imgWidth * userScale
+        property real scaleHeight: imgHeight * userScale
+        property real dispWidth: rotation % 180 === 0 ? scaleWidth : scaleHeight
+        property real dispHeight: rotation % 180 === 0 ? scaleHeight : scaleWidth
         property var originalState: ({})
     }
 
@@ -42,20 +44,12 @@ Rectangle {
     }
 
     function translate(dx, dy) {
-        const scaledW = internal.scaleWidth
-        const scaledH = internal.scaleHeight
-        let dispW, dispH
-        if (rotation % 180 === 0) {
-            dispW = scaledW
-            dispH = scaledH
-        } else {
-            dispW = scaledH
-            dispH = scaledW
-        }
-
-        const offsetLimitX = Math.max((dispW - img.width) / 2, 0)
-        const offsetLimitY = Math.max((dispH - img.height) / 2, 0)
-
+        const ratio = img.width / internal.dispWidth
+        const offsetLimitX = Math.max(
+                               (internal.dispWidth - img.width) / 2 * ratio, 0)
+        const offsetLimitY = Math.max(
+                               (internal.dispHeight - img.height) / 2 * ratio,
+                               0)
         offsetX = clamp(-offsetLimitX, offsetLimitX, offsetX + dx)
         offsetY = clamp(-offsetLimitY, offsetLimitY, offsetY + dy)
     }
@@ -64,12 +58,14 @@ Rectangle {
         userScale = clamp(internal.minScale, internal.maxScale,
                           userScale * factor)
 
-        if (userScale <= internal.baseScale) {
-            offsetX = offsetY = 0
-        }
-
-        internal.scaleWidth = internal.imgWidth * userScale
-        internal.scaleHeight = internal.imgHeight * userScale
+        const ratio = img.width / internal.dispWidth
+        const offsetLimitX = Math.max(
+                               (internal.dispWidth - img.width) / 2 * ratio, 0)
+        const offsetLimitY = Math.max(
+                               (internal.dispHeight - img.height) / 2 * ratio,
+                               0)
+        offsetX = clamp(-offsetLimitX, offsetLimitX, offsetX)
+        offsetY = clamp(-offsetLimitY, offsetLimitY, offsetY)
     }
 
     function rotate(angle) {

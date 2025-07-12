@@ -26,6 +26,8 @@ qt_add_qml_module(viewer
         cpp/jraw_image_provider.cpp
         cpp/cache_image_provider.h
         cpp/cache_image_provider.cpp
+        cpp/app_controller.h
+        cpp/app_controller.cpp
 )
 
 qt_add_resources(viewer "images"

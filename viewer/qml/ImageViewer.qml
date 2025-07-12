@@ -9,7 +9,7 @@ Window {
     title: "Image Viewer"
     visibility: Window.FullScreen
 
-    property var imagePaths: []
+    property var imagePaths: appController.imagePaths
 
     property int activeIndex: -1
     property var tileModel: imagePaths.map((path, idx) => ({
